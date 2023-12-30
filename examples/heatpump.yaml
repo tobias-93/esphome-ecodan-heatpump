@@ -13,3 +13,14 @@ esp8266:
 
 packages:
   ecodan-heatpump: github://tobias-93/esphome-ecodan-heatpump/heatpump.yaml@main
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+
+ota:
+  password: !secret heatpump_ota_password
+
+api:
+  encryption:
+    key: !secret heatpump_encryption_key
