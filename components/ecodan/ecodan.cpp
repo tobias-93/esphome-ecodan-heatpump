@@ -149,7 +149,7 @@ int EcodanHeatpump::readPacket(uint8_t *data) {
   if (available() > 0) { // read until we get start byte 0xfc
     while (available() > 0 && !foundStart) {
       data[0] = read();
-      if (data[0] == HEADER[0]) {
+      if (data[0] == CONNECT[0]) {
         foundStart = true;
         delay(READOUT_DELAY); // found that this delay increases accuracy when reading, might not be needed though
       }
@@ -160,7 +160,7 @@ int EcodanHeatpump::readPacket(uint8_t *data) {
     for (int i = 1; i < 5; i++) { // read header
       data[i] = read();
     }
-    if (data[0] == HEADER[0]) { // check header
+    if (data[0] == CONNECT[0]) { // check header
       dataLength = data[4] + 5;
       for (int i = 5; i < dataLength; i++) {
         data[i] = read(); // read the payload data
