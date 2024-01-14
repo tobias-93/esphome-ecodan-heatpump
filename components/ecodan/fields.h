@@ -84,7 +84,7 @@ DEFINE_FIELD(holiday_mode, 0x28, 9, VarType_ON_OFF);
 
 // Boolean fields
 DEFINE_FIELD(power_state, 0x26, 8, VarType_ON_OFF);
-DEFINE_FIELD(force_dhw, 0xff, 0, VarType_ON_OFF); // Readback disabled, not clear which register this maps to
+DEFINE_FIELD(force_dhw, 0x05, 12, VarType_ON_OFF);
 } // namespace fields
 } // namespace ecodan
 
