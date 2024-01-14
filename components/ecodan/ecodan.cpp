@@ -231,21 +231,21 @@ void EcodanHeatpump::setRemoteTemperature(float value) {
   memcpy(sendBuffer, command_zone1_room_temp::packetMask, PACKET_BUFFER_SIZE);
   if (value > 0) {
     ESP_LOGI(TAG, "Room temperature set to: %f", value);
-    uint16_t temperature = value * 100;
-    temp1 = (uint8_t) (temperature >> 8);
-    temp2 = (uint8_t) (temperature & 0x00ff);
-    sendBuffer[command_zone1_room_temp::varIndex] = temp1;
-    sendBuffer[command_zone1_room_temp::varIndex + 1] = temp2;
-    // value = value * 2;
-    // value = round(value);
-    // value = value / 2;
-    // float temp1 = 3 + ((value - 10) * 2);
-    // sendBuffer[command_zone1_room_temp::varIndex] = (int)temp1;
-    // float temp2 = (value * 2) + 128;
-    // sendBuffer[command_zone1_room_temp::varIndex + 1] = (int)temp2;
+    // uint16_t temperature = value * 100;
+    // temp1 = (uint8_t) (temperature >> 8);
+    // temp2 = (uint8_t) (temperature & 0x00ff);
+    // sendBuffer[command_zone1_room_temp::varIndex] = temp1;
+    // sendBuffer[command_zone1_room_temp::varIndex + 1] = temp2;
+    value = value * 2;
+    value = round(value);
+    value = value / 2;
+    float temp1 = 3 + ((value - 10) * 2);
+    sendBuffer[command_zone1_room_temp::varIndex] = (int)temp1;
+    float temp2 = (value * 2) + 128;
+    sendBuffer[command_zone1_room_temp::varIndex + 1] = (int)temp2;
   } else {
     ESP_LOGI(TAG, "Room temperature control back to builtin sensor");
-    sendBuffer[command_zone1_room_temp::varIndex - 2] = 0x00;
+    sendBuffer[command_zone1_room_temp::varIndex - 1] = 0x00;
     sendBuffer[command_zone1_room_temp::varIndex + 1] = 0x80;
   }
   this->sendSerialPacket(sendBuffer);
