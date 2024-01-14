@@ -108,6 +108,8 @@ class EcodanHeatpump : public PollingComponent, public uart::UARTDevice {
 
     void dump_config() override;
 
+    void setRemoteTemperature(float value);
+
     // Sensor setters
 #define ECODAN_SET_SENSOR(s) \
     void set_##s(sensor::Sensor* sensor) { s_##s##_ = sensor; }
