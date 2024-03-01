@@ -112,7 +112,7 @@ sensor:
     energy_dhw_cons_yesterday:
       name: Hot water energy consumption (yesterday)
     energy_dhw_prod_yesterday:
-      name: Energy production (yesterday)
+      name: Hot water energy production (yesterday)
 
 
 switch:
