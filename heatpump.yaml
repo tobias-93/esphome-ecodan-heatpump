@@ -102,7 +102,7 @@ sensor:
     water_flow:
       name: Water flow
     energy_cons_yesterday:
-      name: Heating Energy consumption (yesterday)
+      name: Heating energy consumption (yesterday)
     energy_prod_yesterday:
       name: Heating Energy production (yesterday)
     energy_cooling_cons_yesterday:
