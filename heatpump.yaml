@@ -71,7 +71,6 @@ text_sensor:
     holiday_mode:
       name: Holiday mode
 
-
 sensor:
   - platform: uptime
     name: Uptime
@@ -113,7 +112,6 @@ sensor:
       name: Hot water energy consumption (yesterday)
     energy_dhw_prod_yesterday:
       name: Hot water energy production (yesterday)
-
 
 switch:
   - platform: ecodan
