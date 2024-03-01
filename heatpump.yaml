@@ -1,5 +1,5 @@
 external_components:
-  - source: github://arhein123/esphome-ecodan-heatpump@main
+  - source: github://tobias-93/esphome-ecodan-heatpump@main
     components: [ ecodan ]
 
 logger:
