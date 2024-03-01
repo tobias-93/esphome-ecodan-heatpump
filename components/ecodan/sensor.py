@@ -107,6 +107,34 @@ CONFIG_SCHEMA = cv.Schema(
             device_class=DEVICE_CLASS_ENERGY,
             state_class=STATE_CLASS_TOTAL,
         ),
+        cv.Optional("energy_cooling_cons_yesterday"): sensor.sensor_schema(
+            unit_of_measurement=UNIT_KILOWATT_HOURS,
+            icon="mdi:transmission-tower-export",
+            accuracy_decimals=3,
+            device_class=DEVICE_CLASS_ENERGY,
+            state_class=STATE_CLASS_TOTAL,
+        ),
+        cv.Optional("energy_cooling_prod_yesterday"): sensor.sensor_schema(
+            unit_of_measurement=UNIT_KILOWATT_HOURS,
+            icon="mdi:transmission-tower-import",
+            accuracy_decimals=3,
+            device_class=DEVICE_CLASS_ENERGY,
+            state_class=STATE_CLASS_TOTAL,
+        ),
+        cv.Optional("energy_dhw_cons_yesterday"): sensor.sensor_schema(
+            unit_of_measurement=UNIT_KILOWATT_HOURS,
+            icon="mdi:transmission-tower-export",
+            accuracy_decimals=3,
+            device_class=DEVICE_CLASS_ENERGY,
+            state_class=STATE_CLASS_TOTAL,
+        ),
+        cv.Optional("energy_dhw_prod_yesterday"): sensor.sensor_schema(
+            unit_of_measurement=UNIT_KILOWATT_HOURS,
+            icon="mdi:transmission-tower-import",
+            accuracy_decimals=3,
+            device_class=DEVICE_CLASS_ENERGY,
+            state_class=STATE_CLASS_TOTAL,
+        ),
     }
 ).extend(cv.COMPONENT_SCHEMA)
 
