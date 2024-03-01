@@ -110,7 +110,7 @@ sensor:
     energy_cooling_prod_yesterday:
       name: Cooling Energy production (yesterday)
     energy_dhw_cons_yesterday:
-      name: Energy consumption (yesterday)
+      name: Hot water energy consumption (yesterday)
     energy_dhw_prod_yesterday:
       name: Energy production (yesterday)
 
