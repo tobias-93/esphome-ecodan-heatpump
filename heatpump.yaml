@@ -94,6 +94,10 @@ sensor:
       name: Water feed temperature
     water_return_temp_signed:
       name: Water return temperature
+    mix_tank_feed_temp:
+      name: Mixer tank feed temp
+    mix_tank_return_temp:
+      name: Mixer tank return temp
     hot_water_temperature:
       name: Hot water temperature
     runtime:
