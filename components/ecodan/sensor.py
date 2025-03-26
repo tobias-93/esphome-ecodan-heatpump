@@ -76,6 +76,20 @@ CONFIG_SCHEMA = cv.Schema(
             device_class=DEVICE_CLASS_TEMPERATURE,
             state_class=STATE_CLASS_MEASUREMENT,
         ),
+        cv.Optional("mix_tank_feed_temp"): sensor.sensor_schema(
+            unit_of_measurement=UNIT_CELSIUS,
+            icon="mdi:coolant-temperature",
+            accuracy_decimals=1,
+            device_class=DEVICE_CLASS_TEMPERATURE,
+            state_class=STATE_CLASS_MEASUREMENT,
+        ),
+        cv.Optional("mix_tank_return_temp"): sensor.sensor_schema(
+            unit_of_measurement=UNIT_CELSIUS,
+            icon="mdi:coolant-temperature",
+            accuracy_decimals=1,
+            device_class=DEVICE_CLASS_TEMPERATURE,
+            state_class=STATE_CLASS_MEASUREMENT,
+        ),
         cv.Optional("hot_water_temperature"): sensor.sensor_schema(
             unit_of_measurement=UNIT_CELSIUS,
             icon="mdi:hand-water",
