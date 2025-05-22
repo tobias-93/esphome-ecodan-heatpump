@@ -25,7 +25,7 @@ CONFIG_SCHEMA = cv.Schema(
 ).extend(cv.COMPONENT_SCHEMA)
 
 
-def to_code(config):
+async def to_code(config):
     heatpump = yield cg.get_variable(config[CONF_ECODAN_ID])
 
     switches = []
