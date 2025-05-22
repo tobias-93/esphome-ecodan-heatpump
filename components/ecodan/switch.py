@@ -14,18 +14,12 @@ CONFIG_SCHEMA = cv.Schema(
     {
         cv.GenerateID(CONF_ECODAN_ID): cv.use_id(ECODAN),
         cv.Optional("power_state"): switch.switch_schema(
+            EcodanSwitch,
             icon="mdi:lightning-bolt"
-        ).extend(
-            {
-                cv.GenerateID(): cv.declare_id(EcodanSwitch),
-            }
         ),
         cv.Optional("force_dhw"): switch.switch_schema(
+            EcodanSwitch,
             icon="mdi:water-plus"
-        ).extend(
-            {
-                cv.GenerateID(): cv.declare_id(EcodanSwitch),
-            }
         ),
     }
 ).extend(cv.COMPONENT_SCHEMA)
@@ -40,8 +34,7 @@ def to_code(config):
             continue
         id = conf.get("id")
         if id and id.type == switch.Switch:
-            var = cg.new_Pvariable(conf[CONF_ID])
-            yield switch.register_switch(var, conf)
+            var = await switch.new_switch(conf)
             cg.add(getattr(heatpump, f"set_{key}")(var))
             cg.add(var.set_key(key))
             switches.append(f"F({key})")
