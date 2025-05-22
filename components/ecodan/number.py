@@ -41,7 +41,7 @@ CONFIG_SCHEMA = cv.Schema(
 ).extend(cv.COMPONENT_SCHEMA)
 
 
-def to_code(config):
+async def to_code(config):
     heatpump = yield cg.get_variable(config[CONF_ECODAN_ID])
 
     numbers = []
@@ -66,8 +66,7 @@ def to_code(config):
                 min_value = 0
                 max_value = 100
                 step = 1
-            var = cg.new_Pvariable(conf[CONF_ID])
-            yield number.register_number(var, conf, min_value=min_value, max_value=max_value, step=step)
+            var = await number.new_number(conf, min_value=min_value, max_value=max_value, step=step)
             cg.add(getattr(heatpump, f"set_{key}")(var))
             cg.add(var.set_key(key))
             numbers.append(f"F({key})")

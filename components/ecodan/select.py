@@ -29,7 +29,7 @@ CONFIG_SCHEMA = cv.Schema(
 ).extend(cv.COMPONENT_SCHEMA)
 
 
-def to_code(config):
+async def to_code(config):
     heatpump = yield cg.get_variable(config[CONF_ECODAN_ID])
 
     selects = []
@@ -53,8 +53,7 @@ def to_code(config):
                 ]
             else:
                 options = []
-            var = cg.new_Pvariable(conf[CONF_ID])
-            yield select.register_select(var, conf, options=options)
+            var = await select.new_select(conf, options=options)
             cg.add(getattr(heatpump, f"set_{key}")(var))
             cg.add(var.set_key(key))
             selects.append(f"F({key})")
