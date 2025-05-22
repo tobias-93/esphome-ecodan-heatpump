@@ -37,7 +37,7 @@ async def to_code(config):
             continue
         id = conf.get("id")
         if id and id.type == text_sensor.TextSensor:
-            var = text_sensor.new_text_sensor(conf)
+            var = await text_sensor.new_text_sensor(conf)
             cg.add(getattr(heatpump, f"set_{key}")(var))
             text_sensors.append(f"F({key})")
 
