@@ -18,18 +18,12 @@ CONFIG_SCHEMA = cv.Schema(
     {
         cv.GenerateID(CONF_ECODAN_ID): cv.use_id(ECODAN),
         cv.Optional(CONF_MODE_SELECT): select.select_schema(
+            EcodanModeSelect,
             icon="mdi:sun-snowflake-variant",
-        ).extend(
-            {
-                cv.GenerateID(): cv.declare_id(EcodanModeSelect),
-            }
         ),
         cv.Optional(CONF_HOT_WATER_MODE): select.select_schema(
+            EcodanModeSelect,
             icon="mdi:hand-water",
-        ).extend(
-            {
-                cv.GenerateID(): cv.declare_id(EcodanModeSelect),
-            }
         ),
     }
 ).extend(cv.COMPONENT_SCHEMA)
