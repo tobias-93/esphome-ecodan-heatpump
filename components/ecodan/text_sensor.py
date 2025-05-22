@@ -29,7 +29,7 @@ CONFIG_SCHEMA = cv.Schema(
 
 
 async def to_code(config):
-    heatpump = yield cg.get_variable(config[CONF_ECODAN_ID])
+    heatpump = await cg.get_variable(config[CONF_ECODAN_ID])
 
     text_sensors = []
     for key, conf in config.items():
