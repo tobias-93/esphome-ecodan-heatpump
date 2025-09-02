@@ -61,6 +61,9 @@ float parsePacketNumberItem(uint8_t *packet, varTypeEnum varType, uint8_t index)
   case VarType_3BYTEVALUE:
     return parse3ByteValue(packet, index);
     break;
+  case VarType_TOTAL_ENERGY:
+    return parse3ByteValue(packet, index) / 10;
+    break;
   case VarType_2BYTEHEXVALUE:
     return parse2ByteHexValue(packet, index);
     break;

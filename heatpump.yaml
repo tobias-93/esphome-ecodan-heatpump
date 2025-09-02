@@ -112,6 +112,8 @@ sensor:
       name: Hot water energy consumption (yesterday)
     energy_dhw_prod_yesterday:
       name: Hot water energy production (yesterday)
+    energy_consumed_increasing:
+      name: Total energy consumed
 
 switch:
   - platform: ecodan

@@ -27,6 +27,7 @@ enum varTypeEnum {
   VarType_2BYTEHEXVALUE,
   VarType_ON_OFF,
   VarType_HEAT_STAGE,
+  VarType_TOTAL_ENERGY,
 };
 
 namespace fields {
@@ -72,6 +73,7 @@ DEFINE_FIELD(energy_cooling_cons_yesterday, 0xA1, 12, VarType_3BYTEVALUE);
 DEFINE_FIELD(energy_cooling_prod_yesterday, 0xA2, 12, VarType_3BYTEVALUE);
 DEFINE_FIELD(energy_dhw_cons_yesterday, 0xA1, 15, VarType_3BYTEVALUE);
 DEFINE_FIELD(energy_dhw_prod_yesterday, 0xA2, 15, VarType_3BYTEVALUE);
+DEFINE_FIELD(energy_consumed_increasing, 0x07, 16, VarType_TOTAL_ENERGY);
 
 // Text fields
 DEFINE_FIELD(date_time, 0x01, 6, VarType_TIME_DATE);
