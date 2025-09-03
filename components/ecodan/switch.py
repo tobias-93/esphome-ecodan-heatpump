@@ -21,6 +21,10 @@ CONFIG_SCHEMA = cv.Schema(
             EcodanSwitch,
             icon="mdi:water-plus"
         ),
+        cv.Optional("holiday_mode"): switch.switch_schema(
+            EcodanSwitch,
+            icon="mdi:beach"
+        ),
     }
 ).extend(cv.COMPONENT_SCHEMA)
 

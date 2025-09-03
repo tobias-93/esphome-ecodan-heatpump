@@ -121,6 +121,8 @@ switch:
       name: Power state
     force_dhw:
       name: Force DHW
+    holiday_mode:
+      name: Holiday Mode
 
 select:
   - platform: ecodan
