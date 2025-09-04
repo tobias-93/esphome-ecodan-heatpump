@@ -52,6 +52,7 @@ DEFINE_FIELD(hot_water_max_temp_drop, 0x09, 16, VarType_DECVALUE);
 DEFINE_FIELD(hot_water_temp_range_max, 0x09, 17, VarType_ONE_BYTE_TEMPERATURE_20);
 DEFINE_FIELD(hot_water_temp_range_min, 0x09, 18, VarType_ONE_BYTE_TEMPERATURE_20);
 DEFINE_FIELD(zone1_room_temperature, 0x0b, 6, VarType_TEMPERATURE);
+DEFINE_FIELD(zone2_room_temperature, 0x0b, 8, VarType_TEMPERATURE);
 DEFINE_FIELD(gas_return_temperature, 0x0b, 13, VarType_TEMPERATURE);
 DEFINE_FIELD(gas_return_temp_signed, 0x0b, 15, VarType_ONE_BYTE_TEMPERATURE);
 DEFINE_FIELD(outside_temperature, 0x0b, 16, VarType_ONE_BYTE_TEMPERATURE);
