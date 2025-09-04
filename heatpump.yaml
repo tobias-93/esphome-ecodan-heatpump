@@ -85,7 +85,9 @@ sensor:
     output_power:
       name: Output power
     zone1_room_temperature:
-      name: Room temperature
+      name: Zone 1 Room temperature
+    zone2_room_temperature:
+      name: Zone 2 Room temperature
     gas_return_temp_signed:
       name: Gas return temperature
     outside_temperature:
@@ -136,6 +138,10 @@ number:
     hot_water_setpoint:
       name: Hot water setpoint
     zone1_room_temp_setpoint:
-      name: Room temperature setpoint
+      name: Zone 1 Room temperature setpoint
     zone1_flow_temp_setpoint:
-      name: Flow temperature setpoint
+      name: Zone 1 Flow temperature setpoint
+    zone2_room_temp_setpoint:
+      name: Zone 2 Room temperature setpoint
+    zone2_flow_temp_setpoint:
+      name: Zone 2 Flow temperature setpoint

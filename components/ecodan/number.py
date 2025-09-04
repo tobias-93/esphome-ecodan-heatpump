@@ -15,6 +15,8 @@ EcodanNumber = ecodan_ns.class_("EcodanNumber", number.Number, cg.Component)
 CONF_HOT_WATER_SETPOINT = "hot_water_setpoint"
 CONF_ZONE1_ROOM_TEMP_SETPOINT = "zone1_room_temp_setpoint"
 CONF_ZONE1_FLOW_TEMP_SETPOINT = "zone1_flow_temp_setpoint"
+CONF_ZONE2_ROOM_TEMP_SETPOINT = "zone2_room_temp_setpoint"
+CONF_ZONE2_FLOW_TEMP_SETPOINT = "zone2_flow_temp_setpoint"
 
 CONFIG_SCHEMA = cv.Schema(
     {
@@ -34,6 +36,18 @@ CONFIG_SCHEMA = cv.Schema(
         cv.Optional(CONF_ZONE1_FLOW_TEMP_SETPOINT): number.number_schema(
             class_=EcodanNumber,
             icon="mdi:water-thermometer",
+            device_class=DEVICE_CLASS_TEMPERATURE,
+            unit_of_measurement=UNIT_CELSIUS,
+        ),
+        cv.Optional(CONF_ZONE2_ROOM_TEMP_SETPOINT): number.number_schema(
+            class_=EcodanNumber,
+            icon="mdi:home-thermometer-outline",
+            device_class=DEVICE_CLASS_TEMPERATURE,
+            unit_of_measurement=UNIT_CELSIUS,
+        ),
+        cv.Optional(CONF_ZONE2_FLOW_TEMP_SETPOINT): number.number_schema(
+            class_=EcodanNumber,
+            icon="mdi:water-thermometer-outline",
             device_class=DEVICE_CLASS_TEMPERATURE,
             unit_of_measurement=UNIT_CELSIUS,
         ),
@@ -59,6 +73,14 @@ async def to_code(config):
                 max_value = 30
                 step = 0.5
             elif key == CONF_ZONE1_FLOW_TEMP_SETPOINT:
+                min_value = 20
+                max_value = 60
+                step = 0.5
+            elif key == CONF_ZONE2_ROOM_TEMP_SETPOINT:
+                min_value = 10
+                max_value = 30
+                step = 0.5
+            elif key == CONF_ZONE2_FLOW_TEMP_SETPOINT:
                 min_value = 20
                 max_value = 60
                 step = 0.5
