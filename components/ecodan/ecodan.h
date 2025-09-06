@@ -14,12 +14,22 @@
 #include "fields.h"
 #include "parser.h"
 #include <string>
+#include <vector>
 #define CONNECT_LEN 8
 #define HEADER_LEN 8
 #define RCVD_PKT_FAIL 0
 #define RCVD_PKT_CONNECT_SUCCESS 1
-#define POLL_INTERVAL 10000 // 10 seconds
-#define READOUT_DELAY 100 // 100 ms
+#define READOUT_DELAY 100 // Delay between individual sensor reads
+#define OPERATION_TIMEOUT_MS 300 // Timeout for command responses
+#define MAX_BYTES_PER_LOOP 10 // Limit bytes processed per loop iteration
+#define STATE_LOG_INTERVAL_MS 30000 // Log state every 30 seconds
+#define MAX_INIT_RETRIES 10 // Maximum initialization attempts
+#define INIT_RETRY_DELAY_MS 1000 // Delay between init retries
+#define INIT_RETRY_INTERVAL_MS 2000 // Interval between initialization attempts
+
+// Temperature limits for validation
+#define MIN_TEMPERATURE 10.0f // Minimum temperature in °C
+#define MAX_TEMPERATURE 30.0f // Maximum temperature in °C
 
 namespace esphome {
 namespace ecodan_ {
@@ -104,11 +114,13 @@ class EcodanHeatpump : public PollingComponent, public uart::UARTDevice {
 
     void setup() override;
 
+    void loop() override;
+    
     void update() override;
 
     void dump_config() override;
 
-    void setRemoteTemperature(float value);
+    void setRemoteTemperature(float value, uint8_t zone = 1);
 
     // Sensor setters
 #define ECODAN_SET_SENSOR(s) \
@@ -134,11 +146,67 @@ class EcodanHeatpump : public PollingComponent, public uart::UARTDevice {
     void set_##nb(EcodanNumber* ecodanNumber) { nb_##nb##_ = ecodanNumber; ecodanNumber->set_heatpump(this); }
     ECODAN_NUMBER_LIST(ECODAN_SET_NUMBER, )
 
+    // Public getter for Zone 1 setpoint
+    float get_zone1_room_temp_setpoint() {
+        if (nb_zone1_room_temp_setpoint_ != nullptr) {
+            return nb_zone1_room_temp_setpoint_->state;
+        }
+        return MIN_TEMPERATURE; // Default minimum temperature
+    }
+
     void sendSerialPacket(uint8_t *sendBuffer);
+    void sendImmediatePacket(uint8_t *sendBuffer);
 
   private:
     bool isInitialized = false;
     int currentState = 0;
+    
+    // State machine variables
+    enum class ComponentState {
+      INITIALIZING,
+      CONNECTED,
+      READING_ENTITIES,
+      WAITING_FOR_RESPONSE,
+      SENDING_OPERATION,
+      WAITING_FOR_OPERATION_RESPONSE,
+      IDLE
+    };
+    
+    ComponentState state_ = ComponentState::INITIALIZING;
+    uint32_t last_command_time_ = 0;
+    uint32_t last_read_time_ = 0;
+    uint32_t last_cycle_complete_time_ = 0;
+    uint8_t current_entity_index_ = 0;
+    uint8_t pending_address_ = 0;
+    bool waiting_for_response_ = false;
+    uint8_t init_retry_count_ = 0;
+    
+    // Packet reading state variables (converted from static to instance variables)
+    uint8_t read_state_ = 0; // 0: looking for start, 1: reading header, 2: reading payload
+    uint8_t bytes_read_ = 0;
+    uint8_t expected_length_ = 0;
+    
+    // Command queue for all operations (both sensor reads and user commands)
+    struct PendingOperation {
+      uint8_t buffer[PACKET_BUFFER_SIZE];
+      bool is_pending;
+      uint32_t queued_time;
+      bool is_user_command; // true for user commands (0x41), false for sensor reads (0x42)
+      uint8_t expected_response_address; // for sensor reads only
+    };
+    
+    PendingOperation pending_operation_;
+    bool operation_in_progress_ = false;
+    
+    // Entity tracking
+    struct EntityInfo {
+      uint8_t address;
+      bool is_configured;
+      const char* type; // "s", "ts", "sw", "sl", "nb"
+    };
+    
+    std::vector<EntityInfo> entity_list_;
+    
     void initialize();
 
     void receiveSerialPacket();
@@ -148,6 +216,23 @@ class EcodanHeatpump : public PollingComponent, public uart::UARTDevice {
     static uint8_t calculateCheckSum(uint8_t *data);
 
     void parsePacket(uint8_t *packet);
+    
+    // New state machine methods
+    void buildEntityList();
+    void processStateMachine();
+    void handleInitializing();
+    void handleReading();
+    void handleSendingOperation();
+    void handleWaitingForOperationResponse();
+    bool isTimeToReadNext();
+    void queueCommand(uint8_t *commandBuffer);
+    void queueSensorRead(uint8_t *readBuffer, uint8_t address);
+    void sendQueuedOperation();
+    
+    // Helper methods
+    void encodeRemoteTemperature(uint8_t *buffer, float temperature);
+    void encodeRemoteTemperatureZone2(uint8_t *buffer, float temperature);
+    void buildSensorReadPacket(uint8_t *buffer, uint8_t address);
 
     // Sensor member pointers
 #define ECODAN_DECLARE_SENSOR(s) sensor::Sensor* s_##s##_{nullptr};
