@@ -122,6 +122,106 @@ void EcodanNumber::control(float value) {
   this->publish_state(value);
 }
 
+void EcodanClimate::dump_config() {
+  LOG_CLIMATE("", "Ecodan Climate", this);
+  ESP_LOGCONFIG(TAG, "  Climate controls Zone %d", this->zone_);
+}
+
+void EcodanClimate::setup() {
+  this->target_temperature = NAN;
+  this->mode = climate::CLIMATE_MODE_HEAT;
+}
+
+climate::ClimateTraits EcodanClimate::traits() {
+  auto traits = climate::ClimateTraits();
+  traits.set_supports_current_temperature(true);
+  traits.set_supports_two_point_target_temperature(false);
+  traits.set_visual_min_temperature(this->min_temperature_);
+  traits.set_visual_max_temperature(this->max_temperature_);
+  traits.set_visual_target_temperature_step(this->temperature_step_);
+  traits.set_visual_current_temperature_step(0.1f);
+  
+  traits.set_supported_modes({
+    climate::CLIMATE_MODE_HEAT
+  });
+  
+  return traits;
+}
+
+void EcodanClimate::control(const climate::ClimateCall &call) {
+  if (this->heatpump_ == nullptr) {
+    ESP_LOGE(TAG, "Climate Zone %d: Heatpump not set", this->zone_);
+    return;
+  }
+
+  bool state_changed = false;
+
+  if (call.get_target_temperature().has_value()) {
+    float target_temp = *call.get_target_temperature();
+    
+    if (target_temp < this->min_temperature_ || target_temp > this->max_temperature_) {
+      ESP_LOGW(TAG, "Climate Zone %d: Temperature %.1f°C out of range [%.1f-%.1f°C]", 
+               this->zone_, target_temp, this->min_temperature_, this->max_temperature_);
+      return;
+    }
+    
+    target_temp = round(target_temp / this->temperature_step_) * this->temperature_step_;
+    
+    if (abs(this->target_temperature - target_temp) > 0.01f) {
+      uint8_t sendBuffer[PACKET_BUFFER_SIZE];
+      uint16_t temperature = target_temp * 100;
+      uint8_t temp1 = (uint8_t) (temperature >> 8);
+      uint8_t temp2 = (uint8_t) (temperature & 0x00ff);
+      
+      if (this->zone_ == 1) {
+        memcpy(sendBuffer, command_zone1_room_temp_setpoint::packetMask, PACKET_BUFFER_SIZE);
+        sendBuffer[command_zone1_room_temp_setpoint::varIndex] = temp1;
+        sendBuffer[command_zone1_room_temp_setpoint::varIndex + 1] = temp2;
+      } else if (this->zone_ == 2) {
+        memcpy(sendBuffer, command_zone2_room_temp_setpoint::packetMask, PACKET_BUFFER_SIZE);
+        
+        float zone1_temp = this->heatpump_->get_zone1_room_temp_setpoint();
+        uint16_t zone1_temperature = zone1_temp * 100;
+        uint8_t zone1_temp1 = (uint8_t) (zone1_temperature >> 8);
+        uint8_t zone1_temp2 = (uint8_t) (zone1_temperature & 0x00ff);
+        
+        sendBuffer[15] = zone1_temp1;
+        sendBuffer[16] = zone1_temp2;
+        sendBuffer[command_zone2_room_temp_setpoint::varIndex] = temp1;
+        sendBuffer[command_zone2_room_temp_setpoint::varIndex + 1] = temp2;
+      } else {
+        ESP_LOGE(TAG, "Climate: Invalid zone %d", this->zone_);
+        return;
+      }
+      
+      this->heatpump_->sendSerialPacket(sendBuffer);
+    }
+    
+    this->target_temperature = target_temp;
+    state_changed = true;
+  }
+
+  if (state_changed) {
+    this->publish_state();
+  }
+}
+
+void EcodanClimate::update_current_temperature(float temperature) {
+  if (this->current_temperature != temperature) {
+    this->current_temperature = temperature;
+    this->publish_state();
+  }
+}
+
+void EcodanClimate::update_target_temperature(float temperature) {
+  bool first_update = std::isnan(this->target_temperature);
+  
+  if (!std::isnan(temperature) && (first_update || abs(this->target_temperature - temperature) > 0.01f)) {
+    this->target_temperature = temperature;
+    this->publish_state();
+  }
+}
+
 EcodanHeatpump::EcodanHeatpump (uart::UARTComponent *parent) : uart::UARTDevice(parent) {}
 
 void EcodanHeatpump::setup() {
@@ -289,6 +389,32 @@ void EcodanHeatpump::parsePacket(uint8_t *packet) {
   ECODAN_SELECT_LIST(ECODAN_PUBLISH_SELECT, )
 #define ECODAN_PUBLISH_NUMBER(p_nb) ECODAN_PUBLISH_ENTITY(p_nb, nb, parsePacketNumberItem)
   ECODAN_NUMBER_LIST(ECODAN_PUBLISH_NUMBER, )
+
+  // Update climate entities with zone temperature readings
+  if (field_zone1_room_temperature::address == packet[5] && 0x62 == packet[1] && this->climate_zone1_ != nullptr) {
+    auto temperature = parsePacketNumberItem(packet, field_zone1_room_temperature::varType, field_zone1_room_temperature::varIndex);
+    ESP_LOGV(TAG, "Updating Climate Zone 1 current temperature to %.1f°C", temperature);
+    this->climate_zone1_->update_current_temperature(temperature);
+  }
+  
+  if (field_zone2_room_temperature::address == packet[5] && 0x62 == packet[1] && this->climate_zone2_ != nullptr) {
+    auto temperature = parsePacketNumberItem(packet, field_zone2_room_temperature::varType, field_zone2_room_temperature::varIndex);
+    ESP_LOGV(TAG, "Updating Climate Zone 2 current temperature to %.1f°C", temperature);
+    this->climate_zone2_->update_current_temperature(temperature);
+  }
+
+  // Update climate entities with zone setpoint readings from heat pump
+  if (field_zone1_room_temp_setpoint::address == packet[5] && 0x62 == packet[1] && this->climate_zone1_ != nullptr) {
+    auto setpoint = parsePacketNumberItem(packet, field_zone1_room_temp_setpoint::varType, field_zone1_room_temp_setpoint::varIndex);
+    ESP_LOGD(TAG, "Updating Climate Zone 1 target temperature from heat pump: %.1f°C", setpoint);
+    this->climate_zone1_->update_target_temperature(setpoint);
+  }
+  
+  if (field_zone2_room_temp_setpoint::address == packet[5] && 0x62 == packet[1] && this->climate_zone2_ != nullptr) {
+    auto setpoint = parsePacketNumberItem(packet, field_zone2_room_temp_setpoint::varType, field_zone2_room_temp_setpoint::varIndex);
+    ESP_LOGD(TAG, "Updating Climate Zone 2 target temperature from heat pump: %.1f°C", setpoint);
+    this->climate_zone2_->update_target_temperature(setpoint);
+  }
 }
 
 void EcodanHeatpump::setRemoteTemperature(float value, uint8_t zone) {
@@ -442,6 +568,35 @@ void EcodanHeatpump::buildEntityList() {
     } \
   }
   ECODAN_NUMBER_LIST(ECODAN_ADD_NUMBER, )
+  
+  // Add setpoint reading for climate entities (even if number entities aren't configured)
+  if (this->climate_zone1_ != nullptr) {
+    bool already_added = false;
+    for (const auto& entity : entity_list_) {
+      if (entity.address == field_zone1_room_temp_setpoint::address) {
+        already_added = true;
+        break;
+      }
+    }
+    if (!already_added) {
+      entity_list_.push_back({field_zone1_room_temp_setpoint::address, true, "climate"});
+      ESP_LOGD(TAG, "Added Zone 1 setpoint reading for climate at address 0x%02x", field_zone1_room_temp_setpoint::address);
+    }
+  }
+  
+  if (this->climate_zone2_ != nullptr) {
+    bool already_added = false;
+    for (const auto& entity : entity_list_) {
+      if (entity.address == field_zone2_room_temp_setpoint::address) {
+        already_added = true;
+        break;
+      }
+    }
+    if (!already_added) {
+      entity_list_.push_back({field_zone2_room_temp_setpoint::address, true, "climate"});
+      ESP_LOGD(TAG, "Added Zone 2 setpoint reading for climate at address 0x%02x", field_zone2_room_temp_setpoint::address);
+    }
+  }
   
   ESP_LOGI(TAG, "Built entity list with %d unique addresses", entity_list_.size());
 }

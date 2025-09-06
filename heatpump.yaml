@@ -137,11 +137,19 @@ number:
   - platform: ecodan
     hot_water_setpoint:
       name: Hot water setpoint
-    zone1_room_temp_setpoint:
-      name: Zone 1 Room temperature setpoint
     zone1_flow_temp_setpoint:
       name: Zone 1 Flow temperature setpoint
-    zone2_room_temp_setpoint:
-      name: Zone 2 Room temperature setpoint
     zone2_flow_temp_setpoint:
       name: Zone 2 Flow temperature setpoint
+    # zone1_room_temp_setpoint:
+    #   name: Zone 1 Room temperature setpoint
+    # zone2_room_temp_setpoint:
+    #   name: Zone 2 Room temperature setpoint
+
+# Climate entities for zone temperature control (alternative to number entities above)
+climate:
+  - platform: ecodan
+    zone1:
+      name: "Zone 1 Thermostat"
+    zone2:
+      name: "Zone 2 Thermostat"
