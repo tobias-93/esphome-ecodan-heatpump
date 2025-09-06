@@ -126,7 +126,6 @@ EcodanHeatpump::EcodanHeatpump (uart::UARTComponent *parent) : uart::UARTDevice(
 
 void EcodanHeatpump::setup() {
   // This will be called by App.setup()
-  set_update_interval(POLL_INTERVAL);
   buildEntityList();
   state_ = ComponentState::INITIALIZING;
   last_read_time_ = millis(); // Initialize timing
