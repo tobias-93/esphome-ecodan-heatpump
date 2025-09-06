@@ -19,9 +19,16 @@
 #define HEADER_LEN 8
 #define RCVD_PKT_FAIL 0
 #define RCVD_PKT_CONNECT_SUCCESS 1
-#define POLL_INTERVAL 1000 // 1 second - faster now that we're non-blocking
-#define READOUT_DELAY 100 // 100 ms
-#define MAX_ENTITIES_PER_CYCLE 3 // Process max 3 entities per update cycle
+#define READOUT_DELAY 100 // Delay between individual sensor reads
+#define OPERATION_TIMEOUT_MS 300 // Timeout for command responses
+#define MAX_BYTES_PER_LOOP 10 // Limit bytes processed per loop iteration
+#define STATE_LOG_INTERVAL_MS 30000 // Log state every 30 seconds
+#define MAX_INIT_RETRIES 10 // Maximum initialization attempts
+#define INIT_RETRY_DELAY_MS 1000 // Delay between init retries
+
+// Temperature limits for validation
+#define MIN_TEMPERATURE 10.0f // Minimum temperature in °C
+#define MAX_TEMPERATURE 30.0f // Maximum temperature in °C
 
 namespace esphome {
 namespace ecodan_ {
@@ -215,6 +222,10 @@ class EcodanHeatpump : public PollingComponent, public uart::UARTDevice {
     void queueCommand(uint8_t *commandBuffer);
     void queueSensorRead(uint8_t *readBuffer, uint8_t address);
     void sendQueuedOperation();
+    
+    // Helper methods
+    void encodeRemoteTemperature(uint8_t *buffer, float temperature);
+    void buildSensorReadPacket(uint8_t *buffer, uint8_t address);
 
     // Sensor member pointers
 #define ECODAN_DECLARE_SENSOR(s) sensor::Sensor* s_##s##_{nullptr};
