@@ -295,9 +295,20 @@ void EcodanHeatpump::parsePacket(uint8_t *packet) {
   ECODAN_NUMBER_LIST(ECODAN_PUBLISH_NUMBER, )
 }
 
-void EcodanHeatpump::setRemoteTemperature(float value) {
+void EcodanHeatpump::setRemoteTemperature(float value, uint8_t zone) {
+  if (zone != 1 && zone != 2) {
+    ESP_LOGW(TAG, "Invalid zone %d, must be 1 or 2", zone);
+    return;
+  }
+  
   uint8_t sendBuffer[PACKET_BUFFER_SIZE];
-  memcpy(sendBuffer, command_zone1_room_temp::packetMask, PACKET_BUFFER_SIZE);
+  
+  // Select the appropriate command based on zone
+  if (zone == 1) {
+    memcpy(sendBuffer, command_zone1_room_temp::packetMask, PACKET_BUFFER_SIZE);
+  } else {
+    memcpy(sendBuffer, command_zone2_room_temp::packetMask, PACKET_BUFFER_SIZE);
+  }
   
   if (value > 0) {
     // Validate temperature range
@@ -307,13 +318,25 @@ void EcodanHeatpump::setRemoteTemperature(float value) {
       return;
     }
     
-    ESP_LOGI(TAG, "Setting remote temperature to %.1f°C", value);
-    encodeRemoteTemperature(sendBuffer, value);
+    ESP_LOGI(TAG, "Setting Zone %d remote temperature to %.1f°C", zone, value);
+    
+    if (zone == 1) {
+      encodeRemoteTemperature(sendBuffer, value);
+    } else {
+      encodeRemoteTemperatureZone2(sendBuffer, value);
+    }
   } else {
-    ESP_LOGI(TAG, "Switching back to builtin temperature sensor");
+    ESP_LOGI(TAG, "Switching Zone %d back to builtin temperature sensor", zone);
+    
     // Special encoding to disable remote temperature control
-    sendBuffer[command_zone1_room_temp::varIndex - 1] = 0x00;
-    sendBuffer[command_zone1_room_temp::varIndex + 1] = 0x80;
+    if (zone == 1) {
+      sendBuffer[command_zone1_room_temp::varIndex - 1] = 0x00;
+      sendBuffer[command_zone1_room_temp::varIndex + 1] = 0x80;
+    } else {
+      // Zone 2 disable encoding (may need to be adjusted based on protocol testing)
+      sendBuffer[command_zone2_room_temp::varIndex - 1] = 0x00;
+      sendBuffer[command_zone2_room_temp::varIndex + 1] = 0x80;
+    }
   }
   
   this->queueCommand(sendBuffer);
@@ -680,6 +703,19 @@ void EcodanHeatpump::encodeRemoteTemperature(uint8_t *buffer, float temperature)
   
   buffer[command_zone1_room_temp::varIndex] = temp1;
   buffer[command_zone1_room_temp::varIndex + 1] = temp2;
+}
+
+void EcodanHeatpump::encodeRemoteTemperatureZone2(uint8_t *buffer, float temperature) {
+  // Round temperature to nearest 0.5°C increment
+  temperature = round(temperature * 2.0f) / 2.0f;
+  
+  // Zone 2 remote temperature encoding (based on Zone 1 analysis)
+  // This encoding allows setting Zone 2 room temperature from external sensor
+  uint8_t temp1 = static_cast<uint8_t>(3 + ((temperature - 10.0f) * 2.0f));
+  uint8_t temp2 = static_cast<uint8_t>((temperature * 2.0f) + 128.0f);
+  
+  buffer[command_zone2_room_temp::varIndex] = temp1;
+  buffer[command_zone2_room_temp::varIndex + 1] = temp2;
 }
 
 void EcodanHeatpump::buildSensorReadPacket(uint8_t *buffer, uint8_t address) {
