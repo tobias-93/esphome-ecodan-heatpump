@@ -165,6 +165,7 @@ class EcodanHeatpump : public PollingComponent, public uart::UARTDevice {
     ComponentState state_ = ComponentState::INITIALIZING;
     uint32_t last_command_time_ = 0;
     uint32_t last_read_time_ = 0;
+    uint32_t last_cycle_complete_time_ = 0;
     uint8_t current_entity_index_ = 0;
     uint8_t pending_address_ = 0;
     bool waiting_for_response_ = false;

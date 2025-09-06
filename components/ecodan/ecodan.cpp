@@ -128,12 +128,12 @@ void EcodanHeatpump::setup() {
 }
 
 void EcodanHeatpump::update() {
-  // This will be called by App.loop() - keep it non-blocking
-  // Reset to reading entities if we're idle (start new cycle)
+  // This will be called by ESPHome at the configured update_interval (default: 30s)
+  // Start a new reading cycle if we're idle (respects the update_interval)
   if (state_ == ComponentState::IDLE && isInitialized) {
-
     current_entity_index_ = 0;
     state_ = ComponentState::READING_ENTITIES;
+    ESP_LOGV(TAG, "Starting new sensor reading cycle");
   }
   
   processStateMachine();
@@ -513,6 +513,7 @@ void EcodanHeatpump::handleReading() {
   if (current_entity_index_ >= entity_list_.size()) {
     // Finished reading all entities
     ESP_LOGI(TAG, "Finished reading all entities, component ready");
+    last_cycle_complete_time_ = millis();
     state_ = ComponentState::IDLE;
     return;
   }
