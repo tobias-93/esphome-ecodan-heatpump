@@ -1,5 +1,6 @@
 {
     "files.associations": {
-        "istream": "cpp"
+        "istream": "cpp",
+        "cmath": "cpp"
     }
 }
