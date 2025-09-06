@@ -128,14 +128,18 @@ void EcodanHeatpump::setup() {
 }
 
 void EcodanHeatpump::update() {
-  // This will be called by ESPHome at the configured update_interval (default: 30s)
-  // Start a new reading cycle if we're idle (respects the update_interval)
+  // Called at configured update_interval (default: 30s)
+  // Start a new reading cycle if we're idle
   if (state_ == ComponentState::IDLE && isInitialized) {
     current_entity_index_ = 0;
     state_ = ComponentState::READING_ENTITIES;
-    ESP_LOGV(TAG, "Starting new sensor reading cycle");
+    ESP_LOGI(TAG, "Starting new sensor reading cycle");
   }
-  
+}
+
+void EcodanHeatpump::loop() {
+  // Called frequently by ESPHome main loop
+  // Handle state machine and serial communication
   processStateMachine();
 }
 
