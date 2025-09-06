@@ -106,6 +106,8 @@ class EcodanHeatpump : public PollingComponent, public uart::UARTDevice {
 
     void setup() override;
 
+    void loop() override;
+    
     void update() override;
 
     void dump_config() override;
