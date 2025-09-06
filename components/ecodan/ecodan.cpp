@@ -93,8 +93,7 @@ void EcodanNumber::control(float value) {
     sendBuffer[command_zone2_room_temp_setpoint::varIndex] = temp1;
     sendBuffer[command_zone2_room_temp_setpoint::varIndex + 1] = temp2;
     
-    ESP_LOGD(TAG, "Number %s: value=%.1f, temp=%d, temp1=0x%02x, temp2=0x%02x, varIndex=%d, zone1_temp=%.1f", 
-             "zone2_room_temp_setpoint", value, temperature, temp1, temp2, command_zone2_room_temp_setpoint::varIndex, zone1_temp);
+    ESP_LOGV(TAG, "Zone 2 setpoint: %.1f°C (preserving Zone 1: %.1f°C)", value, zone1_temp);
   } else {
     #define ECODAN_WRITE_NUMBER(nb) \
       if (this->key_ == #nb) { \
@@ -102,8 +101,7 @@ void EcodanNumber::control(float value) {
         memcpy(sendBuffer, command_##nb::packetMask, PACKET_BUFFER_SIZE); \
         sendBuffer[command_##nb::varIndex] = temp1; \
         sendBuffer[command_##nb::varIndex + 1] = temp2; \
-        ESP_LOGD(TAG, "Number %s: value=%.1f, temp=%d, temp1=0x%02x, temp2=0x%02x, varIndex=%d", \
-                 #nb, value, temperature, temp1, temp2, command_##nb::varIndex); \
+        ESP_LOGV(TAG, "Setting %s to %.1f°C", #nb, value); \
       }
       ECODAN_NUMBER_LIST(ECODAN_WRITE_NUMBER, )
   }
@@ -133,7 +131,7 @@ void EcodanHeatpump::update() {
   // This will be called by App.loop() - keep it non-blocking
   // Reset to reading entities if we're idle (start new cycle)
   if (state_ == ComponentState::IDLE && isInitialized) {
-    ESP_LOGD(TAG, "Starting new polling cycle");
+
     current_entity_index_ = 0;
     state_ = ComponentState::READING_ENTITIES;
   }
@@ -147,7 +145,7 @@ void EcodanHeatpump::initialize() {
     write(CONNECT[i]);
   }
   flush();
-  ESP_LOGD(TAG, "Sent connect command");
+  ESP_LOGV(TAG, "Sent connect command");
 }
 
 void EcodanHeatpump::receiveSerialPacket() {
@@ -201,7 +199,7 @@ int EcodanHeatpump::readPacket(uint8_t *data) {
               bytes_read = 0;
               expected_length = 0;
               
-              ESP_LOGD(TAG, "Received valid packet: type=0x%02x, address=0x%02x", data[1], data[5]);
+              ESP_LOGV(TAG, "Received packet: type=0x%02x, address=0x%02x", data[1], data[5]);
               
               if (data[1] == 0x7a) {
                 isInitialized = true;
@@ -226,7 +224,7 @@ int EcodanHeatpump::readPacket(uint8_t *data) {
 
 void EcodanHeatpump::sendSerialPacket(uint8_t *sendBuffer) {
   // Queue user commands for sending
-  ESP_LOGD(TAG, "Queuing user command for sending");
+  ESP_LOGV(TAG, "Queuing user command");
   queueCommand(sendBuffer);
 }
 
@@ -244,12 +242,12 @@ uint8_t EcodanHeatpump::calculateCheckSum(uint8_t *data) {
 }
 
 void EcodanHeatpump::parsePacket(uint8_t *packet) {
-  ESP_LOGD(TAG, "Parsing packet: type=0x%02x, payload[0]=0x%02x", packet[1], packet[5]);
+  ESP_LOGV(TAG, "Parsing packet: type=0x%02x, payload[0]=0x%02x", packet[1], packet[5]);
   
   // Handle operation responses
   if (operation_in_progress_) {
     if (pending_operation_.is_user_command && packet[1] == 0x61) {
-      ESP_LOGD(TAG, "Received Set Response (type 0x61) for user command - completed");
+      ESP_LOGV(TAG, "User command completed");
       operation_in_progress_ = false;
       // Clear waiting_for_response if it was set during user command handling
       if (waiting_for_response_) {
@@ -257,7 +255,7 @@ void EcodanHeatpump::parsePacket(uint8_t *packet) {
       }
     } else if (!pending_operation_.is_user_command && packet[1] == 0x62 && 
                packet[5] == pending_operation_.expected_response_address) {
-      ESP_LOGD(TAG, "Received Get Response (type 0x62) for sensor read address 0x%02x - completed", packet[5]);
+      ESP_LOGV(TAG, "Sensor read completed for address 0x%02x", packet[5]);
       operation_in_progress_ = false;
       waiting_for_response_ = false;
       current_entity_index_++;
@@ -332,7 +330,7 @@ void EcodanHeatpump::dump_config() {
 void EcodanHeatpump::buildEntityList() {
   entity_list_.clear();
   
-  ESP_LOGD(TAG, "Building entity list...");
+  ESP_LOGV(TAG, "Building entity list...");
   
   // Build list of all configured entities with their addresses
 #define ECODAN_ADD_SENSOR(s) \
@@ -428,9 +426,9 @@ void EcodanHeatpump::processStateMachine() {
   delayMicroseconds(1);
   
   static uint32_t last_debug_log = 0;
-  if (now - last_debug_log > 5000) { // Log state every 5 seconds
-    ESP_LOGD(TAG, "State machine: state=%d, initialized=%s, entities=%d, op_pending=%s", 
-             (int)state_, isInitialized ? "true" : "false", entity_list_.size(),
+  if (now - last_debug_log > 30000) { // Log state every 30 seconds instead of 5
+    ESP_LOGV(TAG, "State: %d, entities: %d, op_pending: %s", 
+             (int)state_, entity_list_.size(),
              pending_operation_.is_pending ? "true" : "false");
     last_debug_log = now;
   }
@@ -448,14 +446,14 @@ void EcodanHeatpump::processStateMachine() {
         // Reset entity reading
         current_entity_index_ = 0;
         state_ = ComponentState::READING_ENTITIES;
-        ESP_LOGD(TAG, "Starting to read %d entities", entity_list_.size());
+        ESP_LOGI(TAG, "Starting to read %d entities", entity_list_.size());
       }
       break;
       
     case ComponentState::READING_ENTITIES:
       // Check if we have a pending user command that needs priority FIRST
       if (pending_operation_.is_pending && pending_operation_.is_user_command && !operation_in_progress_) {
-        ESP_LOGD(TAG, "User command pending, interrupting reading cycle");
+        ESP_LOGV(TAG, "User command pending, interrupting reading cycle");
         state_ = ComponentState::SENDING_OPERATION;
       } else {
         handleReading();
@@ -463,8 +461,7 @@ void EcodanHeatpump::processStateMachine() {
       break;
       
     case ComponentState::WAITING_FOR_RESPONSE:
-      // This state is no longer used - operations go through WAITING_FOR_OPERATION_RESPONSE
-      ESP_LOGW(TAG, "In deprecated WAITING_FOR_RESPONSE state, transitioning to READING_ENTITIES");
+      // This state is no longer used
       state_ = ComponentState::READING_ENTITIES;
       break;
       
@@ -494,7 +491,7 @@ void EcodanHeatpump::handleInitializing() {
   if (!isInitialized) {
     if (now - last_command_time_ > 2000) { // Try every 2 seconds
       if (init_retry_count_ < 10) { // Max 10 retries
-        ESP_LOGD(TAG, "Sending initialization command (attempt %d/10)", init_retry_count_ + 1);
+        ESP_LOGD(TAG, "Initialization attempt %d/10", init_retry_count_ + 1);
         initialize();
         init_retry_count_++;
         last_command_time_ = now;
@@ -515,7 +512,7 @@ void EcodanHeatpump::handleInitializing() {
 void EcodanHeatpump::handleReading() {
   if (current_entity_index_ >= entity_list_.size()) {
     // Finished reading all entities
-    ESP_LOGD(TAG, "Finished reading all %d entities, going to IDLE", entity_list_.size());
+    ESP_LOGI(TAG, "Finished reading all entities, component ready");
     state_ = ComponentState::IDLE;
     return;
   }
@@ -535,7 +532,7 @@ void EcodanHeatpump::handleReading() {
     sendBuffer[5] = entity_list_[current_entity_index_].address;
     pending_address_ = entity_list_[current_entity_index_].address;
     
-    ESP_LOGD(TAG, "Queuing sensor read for entity %d/%d, address 0x%02x", 
+    ESP_LOGV(TAG, "Reading entity %d/%d (address 0x%02x)", 
              current_entity_index_ + 1, entity_list_.size(), pending_address_);
     
     queueSensorRead(sendBuffer, pending_address_);
@@ -556,12 +553,11 @@ void EcodanHeatpump::handleReading() {
 
 void EcodanHeatpump::handleSendingOperation() {
   if (!pending_operation_.is_pending) {
-    ESP_LOGW(TAG, "In SENDING_OPERATION state but no operation pending");
     state_ = ComponentState::READING_ENTITIES;
     return;
   }
   
-  ESP_LOGD(TAG, "Sending queued %s", pending_operation_.is_user_command ? "user command" : "sensor read");
+  ESP_LOGV(TAG, "Sending %s", pending_operation_.is_user_command ? "user command" : "sensor read");
   sendQueuedOperation();
   state_ = ComponentState::WAITING_FOR_OPERATION_RESPONSE;
 }
@@ -571,7 +567,7 @@ void EcodanHeatpump::handleWaitingForOperationResponse() {
   
   // Timeout after 300ms for all responses
   if (now - last_command_time_ > 300) {
-    ESP_LOGD(TAG, "Operation timeout reached, resuming normal operation");
+    ESP_LOGV(TAG, "Operation timeout, resuming");
     operation_in_progress_ = false;
     
     // For sensor reads, advance to next entity
@@ -587,7 +583,7 @@ void EcodanHeatpump::handleWaitingForOperationResponse() {
   
   // If we received the expected response, resume normal operation
   if (!operation_in_progress_) {
-    ESP_LOGD(TAG, "Operation response received, resuming normal operation");
+    ESP_LOGV(TAG, "Operation completed, resuming");
     
     // For sensor reads, the response handling is done in parsePacket
     // Just make sure we transition back to reading
@@ -598,19 +594,17 @@ void EcodanHeatpump::handleWaitingForOperationResponse() {
 bool EcodanHeatpump::isTimeToReadNext() {
   uint32_t now = millis();
   bool ready = (now - last_read_time_) > READOUT_DELAY;
-  ESP_LOGV(TAG, "isTimeToReadNext: now=%d, last=%d, delay=%d, ready=%s", 
-           now, last_read_time_, READOUT_DELAY, ready ? "true" : "false");
+
   return ready;
 }
 
 void EcodanHeatpump::queueCommand(uint8_t *commandBuffer) {
   if (!isInitialized) {
-    ESP_LOGW(TAG, "Cannot queue command - system not initialized yet");
     return;
   }
   
   if (pending_operation_.is_pending) {
-    ESP_LOGW(TAG, "Operation already queued, replacing with new user command");
+    ESP_LOGV(TAG, "Replacing pending operation with new user command");
   }
   
   memcpy(pending_operation_.buffer, commandBuffer, PACKET_BUFFER_SIZE);
@@ -618,12 +612,12 @@ void EcodanHeatpump::queueCommand(uint8_t *commandBuffer) {
   pending_operation_.is_user_command = true;
   pending_operation_.queued_time = millis();
   
-  ESP_LOGD(TAG, "User command queued successfully");
+  ESP_LOGV(TAG, "User command queued");
 }
 
 void EcodanHeatpump::queueSensorRead(uint8_t *readBuffer, uint8_t address) {
   if (pending_operation_.is_pending && pending_operation_.is_user_command) {
-    ESP_LOGD(TAG, "User command already queued, sensor read will wait");
+    ESP_LOGV(TAG, "User command already queued, sensor read will wait");
     return; // Give priority to user commands
   }
   
@@ -642,7 +636,6 @@ void EcodanHeatpump::sendQueuedOperation() {
   uint8_t checkSum;
   
   if (!pending_operation_.is_pending) {
-    ESP_LOGE(TAG, "Attempted to send operation but none queued");
     return;
   }
 
@@ -651,20 +644,7 @@ void EcodanHeatpump::sendQueuedOperation() {
   pending_operation_.buffer[packetLength] = checkSum;
   
   if (pending_operation_.is_user_command) {
-    ESP_LOGD(TAG, "Sending Set Request (0x41): cmd=0x%02x, length=%d", 
-             pending_operation_.buffer[5], packetLength + 1);
-    
-    // Debug: Print the full packet for user commands
-    char packet_str[256] = "";
-    for (i = 0; i <= packetLength; i++) {
-      char byte_str[8];
-      snprintf(byte_str, sizeof(byte_str), "0x%02x ", pending_operation_.buffer[i]);
-      strcat(packet_str, byte_str);
-    }
-    ESP_LOGD(TAG, "Full packet: %s", packet_str);
-  } else {
-    ESP_LOGV(TAG, "Sending Get Request (0x42): address=0x%02x, length=%d", 
-             pending_operation_.buffer[5], packetLength + 1);
+    ESP_LOGV(TAG, "Sending user command");
   }
   
   for (i = 0; i <= packetLength; i++) {
