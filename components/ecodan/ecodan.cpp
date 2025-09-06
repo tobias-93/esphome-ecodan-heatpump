@@ -68,6 +68,15 @@ void EcodanNumber::dump_config() {
 }
 
 void EcodanNumber::control(float value) {
+  // Validate temperature range for temperature setpoints
+  if (this->key_.find("temp_setpoint") != std::string::npos) {
+    if (value < MIN_TEMPERATURE || value > MAX_TEMPERATURE) {
+      ESP_LOGW(TAG, "Temperature %.1f°C out of range [%.1f-%.1f°C], ignoring", 
+               value, MIN_TEMPERATURE, MAX_TEMPERATURE);
+      return;
+    }
+  }
+  
   uint8_t sendBuffer[PACKET_BUFFER_SIZE], temp1, temp2;
   uint16_t temperature = value * 100;
   temp1 = (uint8_t) (temperature >> 8);
@@ -288,27 +297,26 @@ void EcodanHeatpump::parsePacket(uint8_t *packet) {
 }
 
 void EcodanHeatpump::setRemoteTemperature(float value) {
-  uint8_t sendBuffer[PACKET_BUFFER_SIZE], temp1, temp2;
+  uint8_t sendBuffer[PACKET_BUFFER_SIZE];
   memcpy(sendBuffer, command_zone1_room_temp::packetMask, PACKET_BUFFER_SIZE);
+  
   if (value > 0) {
-    ESP_LOGI(TAG, "Room temperature set to: %f", value);
-    // uint16_t temperature = value * 100;
-    // temp1 = (uint8_t) (temperature >> 8);
-    // temp2 = (uint8_t) (temperature & 0x00ff);
-    // sendBuffer[command_zone1_room_temp::varIndex] = temp1;
-    // sendBuffer[command_zone1_room_temp::varIndex + 1] = temp2;
-    value = value * 2;
-    value = round(value);
-    value = value / 2;
-    float temp1 = 3 + ((value - 10) * 2);
-    sendBuffer[command_zone1_room_temp::varIndex] = (int)temp1;
-    float temp2 = (value * 2) + 128;
-    sendBuffer[command_zone1_room_temp::varIndex + 1] = (int)temp2;
+    // Validate temperature range
+    if (value < MIN_TEMPERATURE || value > MAX_TEMPERATURE) {
+      ESP_LOGW(TAG, "Remote temperature %.1f°C out of range [%.1f-%.1f°C], ignoring", 
+               value, MIN_TEMPERATURE, MAX_TEMPERATURE);
+      return;
+    }
+    
+    ESP_LOGI(TAG, "Setting remote temperature to %.1f°C", value);
+    encodeRemoteTemperature(sendBuffer, value);
   } else {
-    ESP_LOGI(TAG, "Room temperature control back to builtin sensor");
+    ESP_LOGI(TAG, "Switching back to builtin temperature sensor");
+    // Special encoding to disable remote temperature control
     sendBuffer[command_zone1_room_temp::varIndex - 1] = 0x00;
     sendBuffer[command_zone1_room_temp::varIndex + 1] = 0x80;
   }
+  
   this->queueCommand(sendBuffer);
 }
 
@@ -430,7 +438,7 @@ void EcodanHeatpump::processStateMachine() {
   delayMicroseconds(1);
   
   static uint32_t last_debug_log = 0;
-  if (now - last_debug_log > 30000) { // Log state every 30 seconds instead of 5
+  if (now - last_debug_log > STATE_LOG_INTERVAL_MS) {
     ESP_LOGV(TAG, "State: %d, entities: %d, op_pending: %s", 
              (int)state_, entity_list_.size(),
              pending_operation_.is_pending ? "true" : "false");
@@ -494,16 +502,16 @@ void EcodanHeatpump::handleInitializing() {
   
   if (!isInitialized) {
     if (now - last_command_time_ > 2000) { // Try every 2 seconds
-      if (init_retry_count_ < 10) { // Max 10 retries
-        ESP_LOGD(TAG, "Initialization attempt %d/10", init_retry_count_ + 1);
+      if (init_retry_count_ < MAX_INIT_RETRIES) {
+        ESP_LOGD(TAG, "Initialization attempt %d/%d", init_retry_count_ + 1, MAX_INIT_RETRIES);
         initialize();
         init_retry_count_++;
         last_command_time_ = now;
       } else {
-        ESP_LOGE(TAG, "Failed to initialize after 10 attempts, resetting retry counter");
+        ESP_LOGE(TAG, "Failed to initialize after %d attempts, resetting retry counter", MAX_INIT_RETRIES);
         // Reset and try again after a longer delay
         init_retry_count_ = 0;
-        last_command_time_ = now - 1000; // Wait 1 more second before retrying
+        last_command_time_ = now - INIT_RETRY_DELAY_MS;
       }
     }
   } else {
@@ -532,9 +540,8 @@ void EcodanHeatpump::handleReading() {
     }
     
     // Queue new sensor read request
-    uint8_t sendBuffer[PACKET_BUFFER_SIZE] = {0xfc, 0x42, 0x02, 0x7a, 0x10, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
-    
-    sendBuffer[5] = entity_list_[current_entity_index_].address;
+    uint8_t sendBuffer[PACKET_BUFFER_SIZE];
+    buildSensorReadPacket(sendBuffer, entity_list_[current_entity_index_].address);
     pending_address_ = entity_list_[current_entity_index_].address;
     
     ESP_LOGV(TAG, "Reading entity %d/%d (address 0x%02x)", 
@@ -570,8 +577,8 @@ void EcodanHeatpump::handleSendingOperation() {
 void EcodanHeatpump::handleWaitingForOperationResponse() {
   uint32_t now = millis();
   
-  // Timeout after 300ms for all responses
-  if (now - last_command_time_ > 300) {
+  // Timeout after configured duration for all responses
+  if (now - last_command_time_ > OPERATION_TIMEOUT_MS) {
     ESP_LOGV(TAG, "Operation timeout, resuming");
     operation_in_progress_ = false;
     
@@ -661,6 +668,30 @@ void EcodanHeatpump::sendQueuedOperation() {
   pending_operation_.is_pending = false;
   operation_in_progress_ = true;
   last_command_time_ = millis();
+}
+
+void EcodanHeatpump::encodeRemoteTemperature(uint8_t *buffer, float temperature) {
+  // Round temperature to nearest 0.5°C increment
+  temperature = round(temperature * 2.0f) / 2.0f;
+  
+  // Ecodan remote temperature encoding (discovered through protocol analysis)
+  // This encoding allows setting room temperature from external sensor
+  uint8_t temp1 = static_cast<uint8_t>(3 + ((temperature - 10.0f) * 2.0f));
+  uint8_t temp2 = static_cast<uint8_t>((temperature * 2.0f) + 128.0f);
+  
+  buffer[command_zone1_room_temp::varIndex] = temp1;
+  buffer[command_zone1_room_temp::varIndex + 1] = temp2;
+}
+
+void EcodanHeatpump::buildSensorReadPacket(uint8_t *buffer, uint8_t address) {
+  // Standard sensor read packet template
+  static const uint8_t READ_PACKET_TEMPLATE[PACKET_BUFFER_SIZE] = {
+    0xfc, 0x42, 0x02, 0x7a, 0x10, 0x00, 0x00, 0x00, 0x00, 0x00, 
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+  };
+  
+  memcpy(buffer, READ_PACKET_TEMPLATE, PACKET_BUFFER_SIZE);
+  buffer[5] = address; // Set the target address
 }
 
 } // namespace ecodan_
