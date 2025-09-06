@@ -169,47 +169,43 @@ void EcodanHeatpump::receiveSerialPacket() {
 }
 
 int EcodanHeatpump::readPacket(uint8_t *data) {
-  static uint8_t read_state = 0; // 0: looking for start, 1: reading header, 2: reading payload
-  static uint8_t bytes_read = 0;
-  static uint8_t expected_length = 0;
-  
   // Non-blocking read - only process available bytes
   while (available() > 0) {
-    switch (read_state) {
+    switch (read_state_) {
       case 0: // Looking for start byte
         data[0] = read();
         if (data[0] == CONNECT[0]) {
-          read_state = 1;
-          bytes_read = 1;
+          read_state_ = 1;
+          bytes_read_ = 1;
           ESP_LOGV(TAG, "Found start byte");
         }
         break;
         
       case 1: // Reading header
-        if (bytes_read < 5) {
-          data[bytes_read] = read();
-          bytes_read++;
-          if (bytes_read == 5) {
-            expected_length = data[4] + 5;
-            read_state = 2;
-            ESP_LOGV(TAG, "Read header, expecting %d total bytes", expected_length + 1);
+        if (bytes_read_ < 5) {
+          data[bytes_read_] = read();
+          bytes_read_++;
+          if (bytes_read_ == 5) {
+            expected_length_ = data[4] + 5;
+            read_state_ = 2;
+            ESP_LOGV(TAG, "Read header, expecting %d total bytes", expected_length_ + 1);
           }
         }
         break;
         
       case 2: // Reading payload and checksum
-        if (bytes_read <= expected_length) {
-          data[bytes_read] = read();
-          bytes_read++;
+        if (bytes_read_ <= expected_length_) {
+          data[bytes_read_] = read();
+          bytes_read_++;
           
-          if (bytes_read > expected_length) {
+          if (bytes_read_ > expected_length_) {
             // We have the complete packet including checksum
             uint8_t checksum = calculateCheckSum(data);
-            if (data[expected_length] == checksum) {
+            if (data[expected_length_] == checksum) {
               // Reset state for next packet
-              read_state = 0;
-              bytes_read = 0;
-              expected_length = 0;
+              read_state_ = 0;
+              bytes_read_ = 0;
+              expected_length_ = 0;
               
               ESP_LOGV(TAG, "Received packet: type=0x%02x, address=0x%02x", data[1], data[5]);
               
@@ -219,11 +215,11 @@ int EcodanHeatpump::readPacket(uint8_t *data) {
               }
               return RCVD_PKT_CONNECT_SUCCESS;
             } else {
-              ESP_LOGE(TAG, "CRC ERROR: expected 0x%02x, got 0x%02x", checksum, data[expected_length]);
+              ESP_LOGE(TAG, "CRC ERROR: expected 0x%02x, got 0x%02x", checksum, data[expected_length_]);
               // Reset state on error
-              read_state = 0;
-              bytes_read = 0;
-              expected_length = 0;
+              read_state_ = 0;
+              bytes_read_ = 0;
+              expected_length_ = 0;
             }
           }
         }
@@ -523,7 +519,7 @@ void EcodanHeatpump::handleInitializing() {
   uint32_t now = millis();
   
   if (!isInitialized) {
-    if (now - last_command_time_ > 2000) { // Try every 2 seconds
+    if (now - last_command_time_ > INIT_RETRY_INTERVAL_MS) { // Try every 2 seconds
       if (init_retry_count_ < MAX_INIT_RETRIES) {
         ESP_LOGD(TAG, "Initialization attempt %d/%d", init_retry_count_ + 1, MAX_INIT_RETRIES);
         initialize();
