@@ -25,6 +25,7 @@
 #define STATE_LOG_INTERVAL_MS 30000 // Log state every 30 seconds
 #define MAX_INIT_RETRIES 10 // Maximum initialization attempts
 #define INIT_RETRY_DELAY_MS 1000 // Delay between init retries
+#define INIT_RETRY_INTERVAL_MS 2000 // Interval between initialization attempts
 
 // Temperature limits for validation
 #define MIN_TEMPERATURE 10.0f // Minimum temperature in °C
@@ -150,7 +151,7 @@ class EcodanHeatpump : public PollingComponent, public uart::UARTDevice {
         if (nb_zone1_room_temp_setpoint_ != nullptr) {
             return nb_zone1_room_temp_setpoint_->state;
         }
-        return 10.0; // Default minimum temperature
+        return MIN_TEMPERATURE; // Default minimum temperature
     }
 
     void sendSerialPacket(uint8_t *sendBuffer);
@@ -179,6 +180,11 @@ class EcodanHeatpump : public PollingComponent, public uart::UARTDevice {
     uint8_t pending_address_ = 0;
     bool waiting_for_response_ = false;
     uint8_t init_retry_count_ = 0;
+    
+    // Packet reading state variables (converted from static to instance variables)
+    uint8_t read_state_ = 0; // 0: looking for start, 1: reading header, 2: reading payload
+    uint8_t bytes_read_ = 0;
+    uint8_t expected_length_ = 0;
     
     // Command queue for all operations (both sensor reads and user commands)
     struct PendingOperation {
