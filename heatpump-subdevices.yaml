@@ -161,6 +161,9 @@ sensor:
     hot_water_temperature:
       name: Hot water temperature
       device_id: hotwater_device
+    legionella_temp_setpoint:
+      name: Legionella temperature setpoint
+      device_id: hotwater_device
     energy_dhw_cons_yesterday:
       name: Hot water energy consumption (yesterday)
       device_id: hotwater_device

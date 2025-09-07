@@ -98,6 +98,8 @@ sensor:
       name: Water return temperature
     hot_water_temperature:
       name: Hot water temperature
+    legionella_temp_setpoint:
+      name: Legionella temperature setpoint
     runtime:
       name: Runtime
     water_flow:
