@@ -68,8 +68,10 @@ void EcodanNumber::dump_config() {
 }
 
 void EcodanNumber::control(float value) {
-  // Validate temperature range for temperature setpoints
-  if (this->key_.find("temp_setpoint") != std::string::npos) {
+  // Validate temperature range for room temperature setpoints (not legionella or hot water)
+  if (this->key_.find("temp_setpoint") != std::string::npos && 
+      this->key_.find("legionella") == std::string::npos &&
+      this->key_.find("hot_water") == std::string::npos) {
     if (value < MIN_TEMPERATURE || value > MAX_TEMPERATURE) {
       ESP_LOGW(TAG, "Temperature %.1f°C out of range [%.1f-%.1f°C], ignoring", 
                value, MIN_TEMPERATURE, MAX_TEMPERATURE);
