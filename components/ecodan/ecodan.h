@@ -289,6 +289,7 @@ class EcodanHeatpump : public PollingComponent, public uart::UARTDevice {
     void encodeRemoteTemperature(uint8_t *buffer, float temperature);
     void encodeRemoteTemperatureZone2(uint8_t *buffer, float temperature);
     void buildSensorReadPacket(uint8_t *buffer, uint8_t address);
+    void addEntityIfNotPresent(uint8_t address, const char* type, const std::string& description);
 
     // Sensor member pointers
 #define ECODAN_DECLARE_SENSOR(s) sensor::Sensor* s_##s##_{nullptr};
