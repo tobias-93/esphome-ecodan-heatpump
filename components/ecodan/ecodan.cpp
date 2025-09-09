@@ -172,7 +172,7 @@ void EcodanClimate::control(const climate::ClimateCall &call) {
     
     target_temp = round(target_temp / this->temperature_step_) * this->temperature_step_;
     
-    if (abs(this->target_temperature - target_temp) > 0.01f) {
+    if (std::abs(this->target_temperature - target_temp) > 0.01f) {
       uint8_t sendBuffer[PACKET_BUFFER_SIZE];
       uint16_t temperature = target_temp * 100;
       uint8_t temp1 = (uint8_t) (temperature >> 8);
@@ -230,7 +230,7 @@ void EcodanClimate::update_current_temperature(float temperature) {
 void EcodanClimate::update_target_temperature(float temperature) {
   bool first_update = std::isnan(this->target_temperature);
   
-  if (!std::isnan(temperature) && (first_update || abs(this->target_temperature - temperature) > 0.01f)) {
+  if (!std::isnan(temperature) && (first_update || std::abs(this->target_temperature - temperature) > 0.01f)) {
     this->target_temperature = temperature;
     
     // Ensure mode is always set correctly for heat pump
@@ -424,8 +424,11 @@ void EcodanHeatpump::parsePacket(uint8_t *packet) {
     uint8_t zone_activity = parsePacketNumberItem(packet, field_zone_activity_status::varType, field_zone_activity_status::varIndex);
     ESP_LOGD(TAG, "Zone activity status: %d", zone_activity);
     
-    // Update climate actions based on which zones are active
-    // 0 = No zones active, 2 = Zone 1 active, 3 = Zone 2 active, 1 = Both zones active (presumed)
+    // Zone activity status mapping (protocol):
+    // 0 = No zones active
+    // 2 = Zone 1 active
+    // 3 = Zone 2 active
+    // 1 = Both zones active
     if (this->climate_zone1_ != nullptr) {
       if (zone_activity == 2 || zone_activity == 1) {
         // Zone 1 is active
@@ -525,6 +528,38 @@ void EcodanHeatpump::setRemoteTemperature(float value, uint8_t zone) {
   }
   
   this->queueCommand(sendBuffer);
+}
+
+void EcodanHeatpump::set_climate_zone(EcodanClimate*& zone_member, EcodanClimate* ecodanClimate) {
+  zone_member = ecodanClimate;
+  if (ecodanClimate != nullptr) {
+    ecodanClimate->set_heatpump(this);
+  }
+}
+
+void EcodanHeatpump::set_climate_zone1(EcodanClimate* ecodanClimate) {
+  set_climate_zone(climate_zone1_, ecodanClimate);
+}
+
+void EcodanHeatpump::set_climate_zone2(EcodanClimate* ecodanClimate) {
+  set_climate_zone(climate_zone2_, ecodanClimate);
+}
+
+float EcodanHeatpump::get_zone_room_temp_setpoint(EcodanClimate* climate_zone) {
+  // Use climate entity target temperature if available and valid
+  if (climate_zone != nullptr && !std::isnan(climate_zone->target_temperature)) {
+    return climate_zone->target_temperature;
+  }
+  // Default fallback temperature if no climate or number entity
+  return 20.0f; // Reasonable default room temperature
+}
+
+float EcodanHeatpump::get_zone1_room_temp_setpoint() {
+  return get_zone_room_temp_setpoint(climate_zone1_);
+}
+
+float EcodanHeatpump::get_zone2_room_temp_setpoint() {
+  return get_zone_room_temp_setpoint(climate_zone2_);
 }
 
 void EcodanHeatpump::dump_config() {
