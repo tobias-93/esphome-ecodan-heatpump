@@ -132,6 +132,7 @@ void EcodanClimate::dump_config() {
 void EcodanClimate::setup() {
   this->target_temperature = NAN;
   this->mode = climate::CLIMATE_MODE_HEAT;
+  this->action = climate::CLIMATE_ACTION_HEATING;
 }
 
 climate::ClimateTraits EcodanClimate::traits() {
@@ -146,6 +147,8 @@ climate::ClimateTraits EcodanClimate::traits() {
   traits.set_supported_modes({
     climate::CLIMATE_MODE_HEAT
   });
+  
+  traits.set_supports_action(true);
   
   return traits;
 }
@@ -204,6 +207,10 @@ void EcodanClimate::control(const climate::ClimateCall &call) {
   }
 
   if (state_changed) {
+    // Ensure mode is always set correctly for heat pump
+    // (Action will be set by zone activity status)
+    this->mode = climate::CLIMATE_MODE_HEAT;
+    
     this->publish_state();
   }
 }
@@ -211,6 +218,11 @@ void EcodanClimate::control(const climate::ClimateCall &call) {
 void EcodanClimate::update_current_temperature(float temperature) {
   if (this->current_temperature != temperature) {
     this->current_temperature = temperature;
+    
+    // Ensure mode is always set correctly for heat pump
+    // (Action will be set by zone activity status)
+    this->mode = climate::CLIMATE_MODE_HEAT;
+    
     this->publish_state();
   }
 }
@@ -220,6 +232,11 @@ void EcodanClimate::update_target_temperature(float temperature) {
   
   if (!std::isnan(temperature) && (first_update || abs(this->target_temperature - temperature) > 0.01f)) {
     this->target_temperature = temperature;
+    
+    // Ensure mode is always set correctly for heat pump
+    // (Action will be set by zone activity status)
+    this->mode = climate::CLIMATE_MODE_HEAT;
+    
     this->publish_state();
   }
 }
@@ -235,6 +252,16 @@ void EcodanHeatpump::setup() {
   // Initialize operation queue
   pending_operation_.is_pending = false;
   operation_in_progress_ = false;
+  
+  // Initialize climate entities with correct mode and action
+  if (climate_zone1_ != nullptr) {
+    climate_zone1_->mode = climate::CLIMATE_MODE_HEAT;
+    climate_zone1_->action = climate::CLIMATE_ACTION_HEATING;
+  }
+  if (climate_zone2_ != nullptr) {
+    climate_zone2_->mode = climate::CLIMATE_MODE_HEAT;
+    climate_zone2_->action = climate::CLIMATE_ACTION_HEATING;
+  }
 }
 
 void EcodanHeatpump::update() {
@@ -391,6 +418,40 @@ void EcodanHeatpump::parsePacket(uint8_t *packet) {
   ECODAN_SELECT_LIST(ECODAN_PUBLISH_SELECT, )
 #define ECODAN_PUBLISH_NUMBER(p_nb) ECODAN_PUBLISH_ENTITY(p_nb, nb, parsePacketNumberItem)
   ECODAN_NUMBER_LIST(ECODAN_PUBLISH_NUMBER, )
+
+  // Update climate actions based on zone activity status
+  if (field_zone_activity_status::address == packet[5] && 0x62 == packet[1]) {
+    uint8_t zone_activity = parsePacketNumberItem(packet, field_zone_activity_status::varType, field_zone_activity_status::varIndex);
+    ESP_LOGD(TAG, "Zone activity status: %d", zone_activity);
+    
+    // Update climate actions based on which zones are active
+    // 0 = No zones active, 2 = Zone 1 active, 3 = Zone 2 active, 1 = Both zones active (presumed)
+    if (this->climate_zone1_ != nullptr) {
+      if (zone_activity == 2 || zone_activity == 1) {
+        // Zone 1 is active
+        this->climate_zone1_->mode = climate::CLIMATE_MODE_HEAT;
+        this->climate_zone1_->action = climate::CLIMATE_ACTION_HEATING;
+      } else {
+        // Zone 1 is idle
+        this->climate_zone1_->mode = climate::CLIMATE_MODE_HEAT;
+        this->climate_zone1_->action = climate::CLIMATE_ACTION_IDLE;
+      }
+      this->climate_zone1_->publish_state();
+    }
+    
+    if (this->climate_zone2_ != nullptr && zone2_detection_complete_ && zone2_available_) {
+      if (zone_activity == 3 || zone_activity == 1) {
+        // Zone 2 is active
+        this->climate_zone2_->mode = climate::CLIMATE_MODE_HEAT;
+        this->climate_zone2_->action = climate::CLIMATE_ACTION_HEATING;
+      } else {
+        // Zone 2 is idle
+        this->climate_zone2_->mode = climate::CLIMATE_MODE_HEAT;
+        this->climate_zone2_->action = climate::CLIMATE_ACTION_IDLE;
+      }
+      this->climate_zone2_->publish_state();
+    }
+  }
 
   // Update climate entities with zone temperature readings
   if (field_zone1_room_temperature::address == packet[5] && 0x62 == packet[1] && this->climate_zone1_ != nullptr) {
@@ -597,6 +658,36 @@ void EcodanHeatpump::buildEntityList() {
     if (!already_added) {
       entity_list_.push_back({field_zone2_room_temp_setpoint::address, true, "climate"});
       ESP_LOGD(TAG, "Added Zone 2 setpoint reading for climate at address 0x%02x", field_zone2_room_temp_setpoint::address);
+    }
+  }
+  
+  // Always add zone 2 temperature reading if zone2 climate is configured
+  if (this->climate_zone2_ != nullptr) {
+    bool zone2_temp_added = false;
+    for (const auto& entity : entity_list_) {
+      if (entity.address == field_zone2_room_temperature::address) {
+        zone2_temp_added = true;
+        break;
+      }
+    }
+    if (!zone2_temp_added) {
+      entity_list_.push_back({field_zone2_room_temperature::address, true, "climate"});
+      ESP_LOGD(TAG, "Added Zone 2 temperature reading for climate at address 0x%02x", field_zone2_room_temperature::address);
+    }
+  }
+  
+  // Always add zone activity status for climate actions (if any climate entities are configured)
+  if (this->climate_zone1_ != nullptr || this->climate_zone2_ != nullptr) {
+    bool zone_activity_added = false;
+    for (const auto& entity : entity_list_) {
+      if (entity.address == field_zone_activity_status::address) {
+        zone_activity_added = true;
+        break;
+      }
+    }
+    if (!zone_activity_added) {
+      entity_list_.push_back({field_zone_activity_status::address, true, "climate"});
+      ESP_LOGD(TAG, "Added zone activity status reading for climate actions at address 0x%02x", field_zone_activity_status::address);
     }
   }
   
