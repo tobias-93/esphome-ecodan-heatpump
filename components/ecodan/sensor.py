@@ -103,6 +103,13 @@ CONFIG_SCHEMA = cv.Schema(
             icon="mdi:clock",
             entity_category=ENTITY_CATEGORY_DIAGNOSTIC,
         ),
+        
+        # Zone activity status sensor (shows which zones are active)
+        cv.Optional("zone_activity_status"): sensor.sensor_schema(
+            icon="mdi:home-thermometer",
+            entity_category=ENTITY_CATEGORY_DIAGNOSTIC,
+        ),
+        
         cv.Optional("water_flow"): sensor.sensor_schema(
             unit_of_measurement="l/m",
             icon="mdi:waves-arrow-right",
