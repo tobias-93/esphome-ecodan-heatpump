@@ -4,6 +4,6 @@ This repo contains an ESPHome custom component for controlling Mitsubishi Ecodan
 
 # Protocol documentation
 
-The protocol documentation can be found here: https://github.com/m000c400/Mitsubishi-CN105-Protocol-Decode/pull/4
+The protocol documentation can be found here: https://raw.githubusercontent.com/F1p/Mitsubishi-CN105-Protocol-Decode/refs/heads/master/documentation/Protocol.md
 
 That pull request contains details about the protocol, with extra information for two zones.
