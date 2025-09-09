@@ -62,6 +62,9 @@ DEFINE_FIELD(water_return_temperature, 0x0c, 9, VarType_TEMPERATURE);
 DEFINE_FIELD(water_return_temp_signed, 0x0c, 11, VarType_ONE_BYTE_TEMPERATURE);
 DEFINE_FIELD(hot_water_temperature, 0x0c, 12, VarType_TEMPERATURE);
 DEFINE_FIELD(runtime, 0x13, 8, VarType_RUNTIME);
+// zone_activity_status is using 0x03 index 13, which is undocumented.
+// It seems to behave as the documented index 8 (3 = Z2 heating, 2 = Z1 heating, 1 = Both Zones heating, 0 = Idle)
+DEFINE_FIELD(zone_activity_status, 0x03, 13, VarType_DECVALUE);
 DEFINE_FIELD(water_flow, 0x14, 17, VarType_DECVALUE);
 DEFINE_FIELD(hot_water_setpoint, 0x26, 13, VarType_TEMPERATURE);
 DEFINE_FIELD(zone1_flow_temp_setpoint2, 0x26, 15, VarType_TEMPERATURE);

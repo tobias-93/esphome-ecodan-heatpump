@@ -2,6 +2,7 @@
 #define INCLUDE_ECODAN_HEATPUMP_H
 
 #include "esphome/core/component.h"
+#include "esphome/components/climate/climate.h"
 #include "esphome/components/number/number.h"
 #include "esphome/components/select/select.h"
 #include "esphome/components/sensor/sensor.h"
@@ -64,6 +65,10 @@ const uint8_t CONNECT[CONNECT_LEN] = {0xfc, 0x5a, 0x02, 0x7a, 0x02, 0xca, 0x01, 
 #define ECODAN_NUMBER_LIST(F, SEP)
 #endif
 
+#ifndef ECODAN_CLIMATE_LIST
+#define ECODAN_CLIMATE_LIST(F, SEP)
+#endif
+
 #define ECODAN_DATA_SENSOR(s) s
 #define COMMA ,
 
@@ -107,6 +112,35 @@ class EcodanNumber: public number::Number, public Component {
     EcodanHeatpump* heatpump_;
 };
 
+class EcodanClimate: public climate::Climate, public Component {
+  public:
+    void setup() override;
+    void dump_config() override;
+    void set_zone(uint8_t zone) { this->zone_ = zone; }
+    void set_heatpump(EcodanHeatpump* heatpump) { this->heatpump_ = heatpump; }
+    void set_temperature_range(float min_temp, float max_temp) {
+      this->min_temperature_ = min_temp;
+      this->max_temperature_ = max_temp;
+    }
+    void set_temperature_step(float step) { this->temperature_step_ = step; }
+    
+    // Called when current temperature is updated from sensor data
+    void update_current_temperature(float temperature);
+    
+    // Called when target temperature is updated from heat pump data
+    void update_target_temperature(float temperature);
+
+  protected:
+    void control(const climate::ClimateCall &call) override;
+    climate::ClimateTraits traits() override;
+
+    uint8_t zone_ = 1;
+    float min_temperature_ = 10.0f;
+    float max_temperature_ = 30.0f;
+    float temperature_step_ = 0.5f;
+    EcodanHeatpump* heatpump_ = nullptr;
+};
+
 class EcodanHeatpump : public PollingComponent, public uart::UARTDevice {
   public:
 
@@ -146,12 +180,34 @@ class EcodanHeatpump : public PollingComponent, public uart::UARTDevice {
     void set_##nb(EcodanNumber* ecodanNumber) { nb_##nb##_ = ecodanNumber; ecodanNumber->set_heatpump(this); }
     ECODAN_NUMBER_LIST(ECODAN_SET_NUMBER, )
 
+    // Climate setters
+    void set_climate_zone1(EcodanClimate* ecodanClimate) { 
+        climate_zone1_ = ecodanClimate; 
+        ecodanClimate->set_heatpump(this); 
+    }
+    void set_climate_zone2(EcodanClimate* ecodanClimate) { 
+        climate_zone2_ = ecodanClimate; 
+        ecodanClimate->set_heatpump(this); 
+    }
+
     // Public getter for Zone 1 setpoint
     float get_zone1_room_temp_setpoint() {
-        if (nb_zone1_room_temp_setpoint_ != nullptr) {
-            return nb_zone1_room_temp_setpoint_->state;
+        // Use climate entity target temperature if available and valid
+        if (climate_zone1_ != nullptr && !std::isnan(climate_zone1_->target_temperature)) {
+            return climate_zone1_->target_temperature;
         }
-        return MIN_TEMPERATURE; // Default minimum temperature
+        // Default fallback temperature if no climate or number entity
+        return 20.0f; // Reasonable default room temperature
+    }
+
+    // Public getter for Zone 2 setpoint (used for Zone 2 climate control)  
+    float get_zone2_room_temp_setpoint() {
+        // Use climate entity target temperature if available and valid
+        if (climate_zone2_ != nullptr && !std::isnan(climate_zone2_->target_temperature)) {
+            return climate_zone2_->target_temperature;
+        }
+        // Default fallback temperature if no climate or number entity
+        return 20.0f; // Reasonable default room temperature
     }
 
     void sendSerialPacket(uint8_t *sendBuffer);
@@ -233,6 +289,7 @@ class EcodanHeatpump : public PollingComponent, public uart::UARTDevice {
     void encodeRemoteTemperature(uint8_t *buffer, float temperature);
     void encodeRemoteTemperatureZone2(uint8_t *buffer, float temperature);
     void buildSensorReadPacket(uint8_t *buffer, uint8_t address);
+    void addEntityIfNotPresent(uint8_t address, const char* type, const std::string& description);
 
     // Sensor member pointers
 #define ECODAN_DECLARE_SENSOR(s) sensor::Sensor* s_##s##_{nullptr};
@@ -252,6 +309,10 @@ class EcodanHeatpump : public PollingComponent, public uart::UARTDevice {
     // Number member pointers
 #define ECODAN_DECLARE_NUMBER(nb) EcodanNumber* nb_##nb##_{nullptr};
     ECODAN_NUMBER_LIST(ECODAN_DECLARE_NUMBER, )
+
+    // Climate member pointers
+    EcodanClimate* climate_zone1_{nullptr};
+    EcodanClimate* climate_zone2_{nullptr};
 };
 
 } // namespace ecodan_
