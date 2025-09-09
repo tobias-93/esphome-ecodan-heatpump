@@ -439,7 +439,7 @@ void EcodanHeatpump::parsePacket(uint8_t *packet) {
       this->climate_zone1_->publish_state();
     }
     
-    if (this->climate_zone2_ != nullptr && zone2_detection_complete_ && zone2_available_) {
+    if (this->climate_zone2_ != nullptr) {
       if (zone_activity == 3 || zone_activity == 1) {
         // Zone 2 is active
         this->climate_zone2_->mode = climate::CLIMATE_MODE_HEAT;
@@ -632,63 +632,19 @@ void EcodanHeatpump::buildEntityList() {
   }
   ECODAN_NUMBER_LIST(ECODAN_ADD_NUMBER, )
   
-  // Add setpoint reading for climate entities (even if number entities aren't configured)
+  // Add setpoint and temperature readings for climate entities
   if (this->climate_zone1_ != nullptr) {
-    bool already_added = false;
-    for (const auto& entity : entity_list_) {
-      if (entity.address == field_zone1_room_temp_setpoint::address) {
-        already_added = true;
-        break;
-      }
-    }
-    if (!already_added) {
-      entity_list_.push_back({field_zone1_room_temp_setpoint::address, true, "climate"});
-      ESP_LOGD(TAG, "Added Zone 1 setpoint reading for climate at address 0x%02x", field_zone1_room_temp_setpoint::address);
-    }
+    addEntityIfNotPresent(field_zone1_room_temp_setpoint::address, "climate", "Zone 1 setpoint reading for climate");
   }
   
   if (this->climate_zone2_ != nullptr) {
-    bool already_added = false;
-    for (const auto& entity : entity_list_) {
-      if (entity.address == field_zone2_room_temp_setpoint::address) {
-        already_added = true;
-        break;
-      }
-    }
-    if (!already_added) {
-      entity_list_.push_back({field_zone2_room_temp_setpoint::address, true, "climate"});
-      ESP_LOGD(TAG, "Added Zone 2 setpoint reading for climate at address 0x%02x", field_zone2_room_temp_setpoint::address);
-    }
-  }
-  
-  // Always add zone 2 temperature reading if zone2 climate is configured
-  if (this->climate_zone2_ != nullptr) {
-    bool zone2_temp_added = false;
-    for (const auto& entity : entity_list_) {
-      if (entity.address == field_zone2_room_temperature::address) {
-        zone2_temp_added = true;
-        break;
-      }
-    }
-    if (!zone2_temp_added) {
-      entity_list_.push_back({field_zone2_room_temperature::address, true, "climate"});
-      ESP_LOGD(TAG, "Added Zone 2 temperature reading for climate at address 0x%02x", field_zone2_room_temperature::address);
-    }
+    addEntityIfNotPresent(field_zone2_room_temp_setpoint::address, "climate", "Zone 2 setpoint reading for climate");
+    addEntityIfNotPresent(field_zone2_room_temperature::address, "climate", "Zone 2 temperature reading for climate");
   }
   
   // Always add zone activity status for climate actions (if any climate entities are configured)
   if (this->climate_zone1_ != nullptr || this->climate_zone2_ != nullptr) {
-    bool zone_activity_added = false;
-    for (const auto& entity : entity_list_) {
-      if (entity.address == field_zone_activity_status::address) {
-        zone_activity_added = true;
-        break;
-      }
-    }
-    if (!zone_activity_added) {
-      entity_list_.push_back({field_zone_activity_status::address, true, "climate"});
-      ESP_LOGD(TAG, "Added zone activity status reading for climate actions at address 0x%02x", field_zone_activity_status::address);
-    }
+    addEntityIfNotPresent(field_zone_activity_status::address, "climate", "zone activity status reading for climate actions");
   }
   
   ESP_LOGI(TAG, "Built entity list with %d unique addresses", entity_list_.size());
@@ -960,6 +916,21 @@ void EcodanHeatpump::encodeRemoteTemperatureZone2(uint8_t *buffer, float tempera
   
   buffer[command_zone2_room_temp::varIndex] = temp1;
   buffer[command_zone2_room_temp::varIndex + 1] = temp2;
+}
+
+void EcodanHeatpump::addEntityIfNotPresent(uint8_t address, const char* type, const std::string& description) {
+  bool already_added = false;
+  for (const auto& entity : entity_list_) {
+    if (entity.address == address) {
+      already_added = true;
+      break;
+    }
+  }
+  if (!already_added) {
+    EntityInfo info = {address, true, type};
+    entity_list_.push_back(info);
+    ESP_LOGD(TAG, "Added %s at address 0x%02x", description.c_str(), address);
+  }
 }
 
 void EcodanHeatpump::buildSensorReadPacket(uint8_t *buffer, uint8_t address) {
