@@ -13,6 +13,7 @@
 #include "esphome/core/defines.h"
 #include "commands.h"
 #include "fields.h"
+#include <cmath>
 #include "parser.h"
 #include <string>
 #include <vector>
@@ -181,37 +182,22 @@ class EcodanHeatpump : public PollingComponent, public uart::UARTDevice {
     ECODAN_NUMBER_LIST(ECODAN_SET_NUMBER, )
 
     // Climate setters
-    void set_climate_zone1(EcodanClimate* ecodanClimate) { 
-        climate_zone1_ = ecodanClimate; 
-        ecodanClimate->set_heatpump(this); 
-    }
-    void set_climate_zone2(EcodanClimate* ecodanClimate) { 
-        climate_zone2_ = ecodanClimate; 
-        ecodanClimate->set_heatpump(this); 
-    }
+  private:
+    void set_climate_zone(EcodanClimate*& zone_member, EcodanClimate* ecodanClimate);
+  public:
+    void set_climate_zone1(EcodanClimate* ecodanClimate);
+    void set_climate_zone2(EcodanClimate* ecodanClimate);
 
+  private:
+    float get_zone_room_temp_setpoint(EcodanClimate* climate_zone);
+  public:
     // Public getter for Zone 1 setpoint
-    float get_zone1_room_temp_setpoint() {
-        // Use climate entity target temperature if available and valid
-        if (climate_zone1_ != nullptr && !std::isnan(climate_zone1_->target_temperature)) {
-            return climate_zone1_->target_temperature;
-        }
-        // Default fallback temperature if no climate or number entity
-        return 20.0f; // Reasonable default room temperature
-    }
+    float get_zone1_room_temp_setpoint();
 
     // Public getter for Zone 2 setpoint (used for Zone 2 climate control)  
-    float get_zone2_room_temp_setpoint() {
-        // Use climate entity target temperature if available and valid
-        if (climate_zone2_ != nullptr && !std::isnan(climate_zone2_->target_temperature)) {
-            return climate_zone2_->target_temperature;
-        }
-        // Default fallback temperature if no climate or number entity
-        return 20.0f; // Reasonable default room temperature
-    }
+    float get_zone2_room_temp_setpoint();
 
     void sendSerialPacket(uint8_t *sendBuffer);
-    void sendImmediatePacket(uint8_t *sendBuffer);
 
   private:
     bool isInitialized = false;
