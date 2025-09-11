@@ -41,6 +41,33 @@ ecodan:
   id: ecodan_instance
   uart_id: ecodan_uart
 
+# ESPHome core configuration with subdevices
+esphome:
+  name: ${name}
+  friendly_name: ${friendlyName}
+  area: "Utility Room"  # Area for the main heat pump controller
+  
+  # Define subdevices for better organization in Home Assistant
+  devices:
+    - id: zone1_device
+      name: "Zone 1 Heating"
+      area_id: zone1_area
+    - id: zone2_device
+      name: "Zone 2 Heating"
+      area_id: zone2_area
+    - id: hotwater_device
+      name: "Hot Water System"
+      area_id: utility_area
+  
+  # Define areas for the subdevices
+  areas:
+    - id: zone1_area
+      name: "Zone 1"
+    - id: zone2_area
+      name: "Zone 2"
+    - id: utility_area
+      name: "Utility Room"
+
 text_sensor:
   - platform: version
     name: ESPHome Version
@@ -51,6 +78,8 @@ text_sensor:
       name: SSID
     bssid:
       name: BSSID
+  
+  # Heat pump general status sensors
   - platform: ecodan
     date_time:
       name: Current date/time
@@ -62,14 +91,18 @@ text_sensor:
       name: Operating mode
     heat_cool:
       name: Heating/cooling
-    hot_water_timer:
-      name: Hot water timer
     date_energy_cons:
       name: Date energy consumption
     date_energy_prod:
       name: Date energy production      
     holiday_mode:
       name: Holiday mode
+  
+  # Hot water specific text sensors
+  - platform: ecodan
+    hot_water_timer:
+      name: Hot water timer
+      device_id: hotwater_device
 
 sensor:
   - platform: uptime
@@ -77,17 +110,17 @@ sensor:
   - platform: wifi_signal
     name: WiFi Signal
     update_interval: 60s
+  
+  # Heat pump general sensors
   - platform: ecodan
     error_code:
       name: Error code
+    multizone_status: # This is required for Zone 2 to work
+      name: Multizone status
     frequency:
       name: Frequency
     output_power:
       name: Output power
-    zone1_room_temperature:
-      name: Zone 1 Room temperature
-    zone2_room_temperature:
-      name: Zone 2 Room temperature
     gas_return_temp_signed:
       name: Gas return temperature
     outside_temperature:
@@ -96,14 +129,12 @@ sensor:
       name: Water feed temperature
     water_return_temp_signed:
       name: Water return temperature
-    hot_water_temperature:
-      name: Hot water temperature
-    legionella_temp_setpoint:
-      name: Legionella temperature setpoint
     runtime:
       name: Runtime
     water_flow:
       name: Water flow
+    energy_consumed_increasing:
+      name: Total energy consumed
     energy_cons_yesterday:
       name: Heating energy consumption (yesterday)
     energy_prod_yesterday:
@@ -112,46 +143,91 @@ sensor:
       name: Cooling energy consumption (yesterday)
     energy_cooling_prod_yesterday:
       name: Cooling energy production (yesterday)
+  
+  # Zone 1 specific sensors
+  - platform: ecodan
+    zone1_room_temperature:
+      name: Room temperature
+      device_id: zone1_device
+  
+  # Zone 2 specific sensors
+  - platform: ecodan
+    zone2_room_temperature:
+      name: Room temperature
+      device_id: zone2_device
+  
+  # Hot water specific sensors
+  - platform: ecodan
+    hot_water_temperature:
+      name: Hot water temperature
+      device_id: hotwater_device
+    legionella_temp_setpoint:
+      name: Legionella temperature setpoint
+      device_id: hotwater_device
     energy_dhw_cons_yesterday:
       name: Hot water energy consumption (yesterday)
+      device_id: hotwater_device
     energy_dhw_prod_yesterday:
       name: Hot water energy production (yesterday)
-    energy_consumed_increasing:
-      name: Total energy consumed
+      device_id: hotwater_device
 
 switch:
+  # Heat pump general switches
   - platform: ecodan
     power_state:
       name: Power state
-    force_dhw:
-      name: Force DHW
     holiday_mode:
       name: Holiday Mode
+  
+  # Hot water specific switches
+  - platform: ecodan
+    force_dhw:
+      name: Force DHW
+      device_id: hotwater_device
 
 select:
+  # Heat pump general selects
   - platform: ecodan
     mode_select:
       name: Mode
+  
+  # Hot water specific selects
+  - platform: ecodan
     hot_water_mode:
       name: Hot water mode
+      device_id: hotwater_device
 
 number:
+  # Zone 1 specific numbers
+  - platform: ecodan
+    zone1_flow_temp_setpoint:
+      name: Flow temperature setpoint
+      device_id: zone1_device
+    # zone1_room_temp_setpoint:
+    #   name: Room temperature setpoint
+    #   device_id: zone1_device
+  
+  # Zone 2 specific numbers
+  - platform: ecodan
+    zone2_flow_temp_setpoint:
+      name: Flow temperature setpoint
+      device_id: zone2_device
+    # zone2_room_temp_setpoint:
+    #   name: Room temperature setpoint
+    #   device_id: zone2_device
+  
+  # Hot water specific numbers
   - platform: ecodan
     hot_water_setpoint:
       name: Hot water setpoint
-    zone1_flow_temp_setpoint:
-      name: Zone 1 Flow temperature setpoint
-    zone2_flow_temp_setpoint:
-      name: Zone 2 Flow temperature setpoint
-    # zone1_room_temp_setpoint:
-    #   name: Zone 1 Room temperature setpoint
-    # zone2_room_temp_setpoint:
-    #   name: Zone 2 Room temperature setpoint
+      device_id: hotwater_device
 
 # Climate entities for zone temperature control (alternative to number entities above)
 climate:
   - platform: ecodan
     zone1:
       name: "Zone 1 Thermostat"
+      device_id: zone1_device
     zone2:
       name: "Zone 2 Thermostat"
+      device_id: zone2_device
