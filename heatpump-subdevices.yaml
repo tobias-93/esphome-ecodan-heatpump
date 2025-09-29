@@ -115,8 +115,6 @@ sensor:
   - platform: ecodan
     error_code:
       name: Error code
-    multizone_status: # This is required for Zone 2 to work
-      name: Multizone status
     frequency:
       name: Frequency
     output_power:
