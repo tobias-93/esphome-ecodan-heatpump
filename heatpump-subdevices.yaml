@@ -186,9 +186,16 @@ switch:
 select:
   # Heat pump general selects
   - platform: ecodan
-    mode_select:
-      name: Mode
-  
+    # Legacy single key (maps to zone1). Prefer using zone specific keys below.
+    # mode_select:
+    #   name: Mode
+    mode_select_zone1:
+      name: Mode Zone 1
+      device_id: zone1_device
+    mode_select_zone2:
+      name: Mode Zone 2
+      device_id: zone2_device
+
   # Hot water specific selects
   - platform: ecodan
     hot_water_mode:

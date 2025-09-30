@@ -86,6 +86,8 @@ DEFINE_FIELD(heating_stage, 0x07, 9, VarType_HEAT_STAGE);
 DEFINE_FIELD(operating_mode, 0x26, 9, VarType_OPERATING_MODE);
 DEFINE_FIELD(hot_water_mode, 0x26, 10, VarType_HW_MODE);
 DEFINE_FIELD(mode_select, 0x26, 11, VarType_MODE_SETTING);
+DEFINE_FIELD(mode_select_zone1, 0x26, 11, VarType_MODE_SETTING);
+DEFINE_FIELD(mode_select_zone2, 0x26, 12, VarType_MODE_SETTING);
 DEFINE_FIELD(heat_cool, 0x26, 12, VarType_HEAT_COOL);
 DEFINE_FIELD(hot_water_timer, 0x28, 9, VarType_ON_OFF);
 DEFINE_FIELD(date_energy_cons, 0xA1, 6, VarType_DATE);

@@ -3,7 +3,8 @@
 constexpr uint8_t ecodan::commands::command_power_state::packetMask[PACKET_BUFFER_SIZE];
 constexpr uint8_t ecodan::commands::command_force_dhw::packetMask[PACKET_BUFFER_SIZE];
 constexpr uint8_t ecodan::commands::command_holiday_mode::packetMask[PACKET_BUFFER_SIZE];
-constexpr uint8_t ecodan::commands::command_mode_select::packetMask[PACKET_BUFFER_SIZE];
+constexpr uint8_t ecodan::commands::command_mode_select_zone1::packetMask[PACKET_BUFFER_SIZE];
+constexpr uint8_t ecodan::commands::command_mode_select_zone2::packetMask[PACKET_BUFFER_SIZE];
 constexpr uint8_t ecodan::commands::command_hot_water_mode::packetMask[PACKET_BUFFER_SIZE];
 constexpr uint8_t ecodan::commands::command_hot_water_setpoint::packetMask[PACKET_BUFFER_SIZE];
 constexpr uint8_t ecodan::commands::command_zone1_room_temp_setpoint::packetMask[PACKET_BUFFER_SIZE];

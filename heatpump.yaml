@@ -130,8 +130,13 @@ switch:
 
 select:
   - platform: ecodan
-    mode_select:
-      name: Mode
+    # Legacy single key (maps to zone1). Prefer using zone specific keys below.
+    # mode_select:
+    #   name: Mode
+    mode_select_zone1:
+      name: Mode Zone 1
+    mode_select_zone2:
+      name: Mode Zone 2
     hot_water_mode:
       name: Hot water mode
 
