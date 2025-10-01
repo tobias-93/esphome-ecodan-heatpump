@@ -135,8 +135,10 @@ sensor:
       name: Total energy consumed
     energy_cons_yesterday:
       name: Heating energy consumption (yesterday)
+      id: energy_cons_yesterday
     energy_prod_yesterday:
       name: Heating energy production (yesterday)
+      id: energy_prod_yesterday
     energy_cooling_cons_yesterday:
       name: Cooling energy consumption (yesterday)
     energy_cooling_prod_yesterday:
@@ -164,10 +166,40 @@ sensor:
       device_id: hotwater_device
     energy_dhw_cons_yesterday:
       name: Hot water energy consumption (yesterday)
+      id: energy_dhw_cons_yesterday
       device_id: hotwater_device
     energy_dhw_prod_yesterday:
       name: Hot water energy production (yesterday)
+      id: energy_dhw_prod_yesterday
       device_id: hotwater_device
+
+  # Calculated CoP (yesterday) as ratio of production/consumption
+  - platform: template
+    name: "CoP (yesterday)"
+    id: cop_yesterday
+    lambda: |-
+      float prod = id(energy_prod_yesterday).state;
+      float cons = id(energy_cons_yesterday).state;
+      if (!std::isfinite(prod) || !std::isfinite(cons) || cons <= 0.0) {
+        return NAN;
+      }
+      return prod / cons;
+    state_class: measurement
+    accuracy_decimals: 2
+
+  - platform: template
+    name: "DHW CoP (yesterday)"
+    device_id: hotwater_device
+    id: dhw_cop_yesterday
+    lambda: |-
+      float prod = id(energy_dhw_prod_yesterday).state;
+      float cons = id(energy_dhw_cons_yesterday).state;
+      if (!std::isfinite(prod) || !std::isfinite(cons) || cons <= 0.0) {
+        return NAN;
+      }
+      return prod / cons;
+    state_class: measurement
+    accuracy_decimals: 2
 
 switch:
   # Heat pump general switches
