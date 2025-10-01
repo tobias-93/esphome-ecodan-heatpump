@@ -150,6 +150,25 @@ sensor:
     state_class: measurement
     accuracy_decimals: 2
 
+  - platform: template
+    name: "Total CoP (yesterday)"
+    id: total_cop_yesterday
+    lambda: |-
+      float prod_heat = id(energy_prod_yesterday).state;
+      float prod_dhw  = id(energy_dhw_prod_yesterday).state;
+      float cons_heat = id(energy_cons_yesterday).state;
+      float cons_dhw  = id(energy_dhw_cons_yesterday).state;
+      if (!std::isfinite(prod_heat) || !std::isfinite(prod_dhw) ||
+          !std::isfinite(cons_heat) || !std::isfinite(cons_dhw)) {
+        return NAN;
+      }
+      float total_prod = prod_heat + prod_dhw;
+      float total_cons = cons_heat + cons_dhw;
+      if (total_cons <= 0.0) return NAN;
+      return total_prod / total_cons;
+    state_class: measurement
+    accuracy_decimals: 2
+
 switch:
   - platform: ecodan
     power_state:
