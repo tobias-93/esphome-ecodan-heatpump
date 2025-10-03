@@ -158,12 +158,19 @@ sensor:
       float prod_dhw  = id(energy_dhw_prod_yesterday).state;
       float cons_heat = id(energy_cons_yesterday).state;
       float cons_dhw  = id(energy_dhw_cons_yesterday).state;
-      if (!std::isfinite(prod_heat) || !std::isfinite(prod_dhw) ||
-          !std::isfinite(cons_heat) || !std::isfinite(cons_dhw)) {
-        return NAN;
+      // Only include subsystems that have a finite, positive consumption
+      float total_prod = 0.0;
+      float total_cons = 0.0;
+
+      if (std::isfinite(cons_heat) && cons_heat > 0.1 && std::isfinite(prod_heat) && prod_heat > 0.1) {
+        total_prod += prod_heat;
+        total_cons += cons_heat;
       }
-      float total_prod = prod_heat + prod_dhw;
-      float total_cons = cons_heat + cons_dhw;
+      if (std::isfinite(cons_dhw) && cons_dhw > 0.1 && std::isfinite(prod_dhw) && prod_dhw > 0.1) {
+        total_prod += prod_dhw;
+        total_cons += cons_dhw;
+      }
+
       if (total_cons <= 0.0) return NAN;
       return total_prod / total_cons;
     state_class: measurement
