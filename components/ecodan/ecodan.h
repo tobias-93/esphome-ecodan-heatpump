@@ -227,6 +227,7 @@ class EcodanHeatpump : public PollingComponent, public uart::UARTDevice {
     uint8_t read_state_ = 0; // 0: looking for start, 1: reading header, 2: reading payload
     uint8_t bytes_read_ = 0;
     uint8_t expected_length_ = 0;
+    uint8_t receive_buffer_[PACKET_BUFFER_SIZE];  // Receive buffer for packet reading state machine
     
     // Command queue for all operations (both sensor reads and user commands)
     struct PendingOperation {

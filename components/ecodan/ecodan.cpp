@@ -291,10 +291,8 @@ void EcodanHeatpump::initialize() {
 }
 
 void EcodanHeatpump::receiveSerialPacket() {
-  uint8_t receiveBuffer[PACKET_BUFFER_SIZE];
-
-  if (readPacket(receiveBuffer) == RCVD_PKT_CONNECT_SUCCESS) {
-    parsePacket(receiveBuffer);
+  if (readPacket(receive_buffer_) == RCVD_PKT_CONNECT_SUCCESS) {
+    parsePacket(receive_buffer_);
   }
 }
 
@@ -331,6 +329,7 @@ int EcodanHeatpump::readPacket(uint8_t *data) {
           if (bytes_read_ > expected_length_) {
             // We have the complete packet including checksum
             uint8_t checksum = calculateCheckSum(data);
+            
             if (data[expected_length_] == checksum) {
               // Reset state for next packet
               read_state_ = 0;
@@ -345,7 +344,7 @@ int EcodanHeatpump::readPacket(uint8_t *data) {
               }
               return RCVD_PKT_CONNECT_SUCCESS;
             } else {
-              ESP_LOGE(TAG, "CRC ERROR: expected 0x%02x, got 0x%02x", checksum, data[expected_length_]);
+              ESP_LOGE(TAG, "CRC ERROR: expected 0x%02x, got 0x%02x (at data[%d])", checksum, data[expected_length_], expected_length_);
               // Reset state on error
               read_state_ = 0;
               bytes_read_ = 0;
@@ -372,6 +371,7 @@ uint8_t EcodanHeatpump::calculateCheckSum(uint8_t *data) {
   uint8_t checksum = 0;
 
   dataLength = data[4] + 5;
+  
   for (int i = 0; i < dataLength; i++) { // sum up the header bytes...
     dataSum += data[i];
   }
