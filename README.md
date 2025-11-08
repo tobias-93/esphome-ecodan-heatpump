@@ -31,7 +31,7 @@ Info about the hardware can be found at https://github.com/SwiCago/HeatPump. I u
 
 ### If you are new to ESPHome
 1. Install ESPHome in HomeAssistant by following [this instruction](https://esphome.io/guides/getting_started_hassio)
-2. Open **ESPHome** from **Settings / Add-ons**. Klick **OPEN WEB UI**
+2. Open **ESPHome** from **Settings / Add-ons**. Click **OPEN WEB UI**
 * Click **NEW DEVICE** in the bottom right corner
 * Give your device a new name, for example **Ecodan Heatpump**, and select **SKIP THIS STEP**
 * Select **ESP8266** and your device will be created

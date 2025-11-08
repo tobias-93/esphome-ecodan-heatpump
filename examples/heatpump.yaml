@@ -12,7 +12,7 @@ esp8266:
     platform_version: 4.2.1
 
 packages:
-  ecodan-heatpump: github://tobias-93/esphome-ecodan-heatpump/heatpump.yaml@main
+  ecodan-heatpump: github://tobias-93/esphome-ecodan-heatpump/heatpump.yaml@future-climate-2zone
 
 wifi:
   ssid: !secret wifi_ssid

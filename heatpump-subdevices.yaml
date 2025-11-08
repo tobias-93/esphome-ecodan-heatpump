@@ -1,5 +1,5 @@
 external_components:
-  - source: github://tobias-93/esphome-ecodan-heatpump@main
+  - source: github://tobias-93/esphome-ecodan-heatpump@future-climate-2zone
     components: [ ecodan ]
 
 logger:
