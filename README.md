@@ -1,117 +1,196 @@
-# ESPHome components for Ecodan heatpumps
-This is a set of components to read out and control Mitsubishi Ecodan heatpumps. I have an ERST20D-VM2D and it is also confirmed to work with EHSD20D-YM9D. It probably works for many air-water heatpumps with CN105 connector. 
+# ESPHome Ecodan Heatpump
 
-It is highly inspired by https://github.com/BartGijsbers/CN105Gateway.
+Read and control Mitsubishi Ecodan air-water heat pumps from Home Assistant over the CN105 connector.
 
-# Caution
-The main branch of this component is kept for compatibility reasons, new development is taking place in the branch [future-climate-2zone](https://github.com/tobias-93/esphome-ecodan-heatpump/tree/future-climate-2zone). For new installations please use the new branch, and once it has been tested (and any feedback has been processed) I will deprecate the old one and set the new implementation as main.
+> **⚠️ Active development has moved**
+> The `main` branch is kept around for compatibility. New work happens on [`future-climate-2zone`](https://github.com/tobias-93/esphome-ecodan-heatpump/tree/future-climate-2zone). For new installs, use that branch — once feedback has been processed it will become the new `main` and this branch will be deprecated.
 
-## Table of Contents
+## Compatibility
+
+Confirmed working and tested with:
+- ERST20D-VM2D
+- EHSD20D-YM9D
+
+Likely works with most Mitsubishi air-water heat pumps that expose a CN105 connector.
+
+## Credits
+
+Inspired by [BartGijsbers/CN105Gateway](https://github.com/BartGijsbers/CN105Gateway). Hardware reference: [SwiCago/HeatPump](https://github.com/SwiCago/HeatPump).
+
+---
+
+## Table of contents
+
 - [Hardware](#hardware)
-- [Installing](#installing)
-  - [If you are experienced with ESPHome](#if-you-are-experienced-with-esphome)
-  - [If you are new to ESPHome](#if-you-are-new-to-esphome)
+- [Installation — experienced](#installation--experienced-esphome-users)
+- [Installation — step by step](#installation--step-by-step-new-to-esphome)
+- [Wiring to the heat pump](#wiring-to-the-heat-pump)
 - [Cookbook](#cookbook)
 - [Contributing](#contributing)
 - [Help](#help)
 
-___
+---
 
 ## Hardware
-Info about the hardware can be found at https://github.com/SwiCago/HeatPump. I used the following:
-- https://www.aliexpress.com/item/1005003547145418.html (take the PH2.0 to Dupont, 5P variant of the connector, it fits by cutting away some plastic)
-- https://www.aliexpress.com/item/32582736130.html (take the ESP-01S, it has some more memory)
-- https://www.aliexpress.com/item/4001165244572.html
-- if you don't already have an adapter to connect it to your PC for initial programming: https://www.aliexpress.com/item/32688280601.html
 
-## Installing
-### If you are experienced with ESPHome
-1. Create a new ESP8266 device in the ESPHome web UI
-2. Update your **Secrets file** with *wifi_ssid*, *wifi_password*, *heatpump_ota_password* and *heatpump_encryption_key*
-3. Edit your device yaml-code and replace the template code with the contents in [heatpump.yaml](./examples/heatpump.yaml)
-4. Attach your ESP8266 to the USB-adapter and connect to your PC. Open [ESPHome Web](https://web.esphome.io/?dashboard_install) and install the ESP-device
-5. Connect the ESP to your Ecodan CN105-port and it will be auto-detected by Home Assistant. Add the device and all the sensors will appear with updated values.
+### Bill of materials
 
-### If you are new to ESPHome
-1. Install ESPHome in HomeAssistant by following [this instruction](https://esphome.io/guides/getting_started_hassio)
-2. Open **ESPHome** from **Settings / Add-ons**. Klick **OPEN WEB UI**
-* Click **NEW DEVICE** in the bottom right corner
-* Give your device a new name, for example **Ecodan Heatpump**, and select **SKIP THIS STEP**
-* Select **ESP8266** and your device will be created
-* Copy the Encryption key to a scratch-pad so you can access it later. It looks something like this *pgdlhjfgkasdhfgeury3874iuygjg748gjhgfds32=*
-* Click **SKIP**
-2. Now your screen should have a device with the name you selected and state **OFFLINE**
-* Click **Edit* to open the device specific yaml-file
-* Copy the OTA: password to the scratch-pad you used for the encryption key. It looks something like this: *"a248d5bc6dae01010101670250c1aadadac1"*
-3. Replace all of the template *yaml* code with the contents in [heatpump.yaml](./examples/heatpump.yaml) located in the examples folder of this repository
-* Click **SAVE** in the upper right corner and close the file with the **X** on the left side, next to the filename.
-4. Open the secrets file by clicking **SECRETS** in the upper right corner of the ESPHome Web UI. Add your Wi-Fi credentials along with the OTA password and the encryption key. It should look something like this;
+| Part | Notes | Link |
+|------|-------|------|
+| CN105 cable | **JST PA 2.0mm** to Dupont female, 5-pin (`PAP-05V-S`) | [AliExpress](https://aliexpress.com/item/1005005562174022.html) |
+| ESP-01S | Use the **ESP-01S** — it has more memory than the plain ESP-01 | [AliExpress](https://www.aliexpress.com/item/32582736130.html) |
+| Power breakout (converts 5V to 3.3V) | | [AliExpress](https://aliexpress.com/item/1005006492591912.html) |
+| USB-to-serial adapter | Only needed for the initial flash if you don't already own one | [AliExpress](https://aliexpress.com/item/1005010685046335.html) |
+
+### Connector
+
+The CN105 is a **5-pin JST PA 2.0mm** connector.
+
+> ⚠️ Do **not** confuse this with the JST **PH** 2.0mm series — the pitch is identical but the housing and locking mechanism are different. A PH connector will not fit the CN105 port.
+
+#### Pinout
+
+| Pin | Signal | Description |
+|-----|--------|-------------|
+| 1 | +12V | Power — **do not use**, unstable under compressor load |
+| 2 | GND | Ground |
+| 3 | +5V | Power supply for the ESP |
+| 4 | TX | Data from heat pump → connect to ESP **RX** |
+| 5 | RX | Data to heat pump ← connect to ESP **TX** |
+
+> 📌 Pin 1 and pin 5 are usually marked near the CN105 port on the PCB.
+
+#### Wire colours (PAP-05V-S cable)
+
+The `PAP-05V-S` pigtail cable has the following wire colours:
+
+| Pin | Colour | Signal |
+|-----|--------|--------|
+| 1 | Black | +12V — **cut this wire off completely** |
+| 2 | Red | GND |
+| 3 | White | +5V |
+| 4 | Yellow | TX (pump) |
+| 5 | Orange | RX (pump) |
+
+> ⚠️ **Cut the black wire (pin 1) off completely.** It carries 12V and is not needed to power the ESP. Leaving it connected risks damaging the ESP if it accidentally contacts another pin.
+
+---
+
+## Installation — experienced ESPHome users
+
+1. Create a new **ESP8266** device in the ESPHome dashboard.
+2. Add to your `secrets.yaml`:
+   - `wifi_ssid`
+   - `wifi_password`
+   - `heatpump_ota_password`
+   - `heatpump_encryption_key`
+3. Replace the generated device YAML with [`examples/heatpump.yaml`](./examples/heatpump.yaml).
+4. Flash via USB using [ESPHome Web](https://web.esphome.io/?dashboard_install).
+5. Connect to the heat pump's CN105 port (see [Wiring](#wiring-to-the-heat-pump)). Home Assistant auto-discovers the device.
+
+---
+
+## Installation — step by step (new to ESPHome)
+
+### 1. Install ESPHome
+
+Install the ESPHome add-on in Home Assistant — see the [official getting-started guide](https://esphome.io/guides/getting_started_hassio).
+
+### 2. Create the device
+
+1. Open **ESPHome** from **Settings → Add-ons** and click **Open Web UI**.
+2. Click **New Device** (bottom-right).
+3. Name it (e.g. *Ecodan Heatpump*) and choose **Skip this step**.
+4. Select **ESP8266**.
+5. **Copy the encryption key** to a scratchpad — it looks like `pgdlhjfgkasdhfgeury3874iuygjg748gjhgfds32=`.
+6. Click **Skip**.
+
+### 3. Configure the YAML
+
+1. The new device shows as **OFFLINE**. Click **Edit**.
+2. **Copy the OTA password** to your scratchpad — it looks like `"a248d5bc6dae01010101670250c1aadadac1"`.
+3. Replace the entire template YAML with the contents of [`examples/heatpump.yaml`](./examples/heatpump.yaml).
+4. **Save** and close the file with the **×** next to the filename.
+
+### 4. Fill in the secrets file
+
+Click **Secrets** (top-right of the ESPHome Web UI) and add:
 
 ```yaml
-# Your Wi-Fi SSID and password
 wifi_ssid: "MySSID"
 wifi_password: "MyWiFiPassword"
 heatpump_ota_password: "a248d5bc6dae01010101670250c1aadadac1"
 heatpump_encryption_key: "pgdlhjfgkasdhfgeury3874iuygjg748gjhgfds32="
 ```
-* Save and close the file.
-5. Back in the ESPHome Web UI, click the **three dots** in the bottom right corner of your device and select **Install**
 
-<img src="https://github.com/hallonstedt/esphome-ecodan-heatpump/assets/55149768/a7a16433-3b1f-4bab-9eac-08de005f97e6" width="600">
+Save and close.
 
-If you have an USB-to-ESP device, it should be possible to install directly from ESPHome. 
-###### Note: make sure that you connect your web-browser to the local IP of the HomeAssistant server. If you connect via internet, for example connect via nginx or Apache, it will not be possible to connect to the COM-port of your computer.
+### 5. Flash the ESP
 
-* Select **Plug into this computer** and in the next step, Open [**ESPHome Web**](https://web.esphome.io/?dashboard_install)
-  
-   Make sure your ESP is connected via USB to the computer where you opened the browser (it does not have to be on the HomeAssistant server) and click **CONNECT**
-  
-   You should see a list of COM ports (If you do not, you probably need to install an updated [FTDI driver](https://ftdichip.com/drivers/))
-* Select the port with the ESP connected and click **Connect**
-  
-   In the next step you should see an option like below, Select **Prepare for first time use**
+1. Click the **three dots** on the device card → **Install**.
 
-<img src="https://github.com/hallonstedt/esphome-ecodan-heatpump/assets/55149768/ed8d7561-4154-4607-a284-4b8fd4cbefe4" width="400">
+   <img src="https://github.com/hallonstedt/esphome-ecodan-heatpump/assets/55149768/a7a16433-3b1f-4bab-9eac-08de005f97e6" width="600">
 
+2. Select **Plug into this computer** and open [ESPHome Web](https://web.esphome.io/?dashboard_install).
 
-6. Once installed, click **Close**
-7. Power-cycle your ESP and return to the **ESPHome Web UI**, your Heatpump device should now say **ONLINE** in the upper right corner.
-  
-   It is auto-detected by HomeAssistant so just open **Settings / Devices & Services** and it will appear
+   > **Note:** Open the browser via the **local IP** of your Home Assistant server. If you reach HA through nginx, Apache or a tunnel, the browser cannot access the COM port.
+
+3. With the ESP plugged into your computer's USB port, click **Connect**. If no ports show up, install the [FTDI driver](https://ftdichip.com/drivers/).
+4. Select the port → **Connect** → **Prepare for first time use**.
+
+   <img src="https://github.com/hallonstedt/esphome-ecodan-heatpump/assets/55149768/ed8d7561-4154-4607-a284-4b8fd4cbefe4" width="400">
+
+5. When the install finishes, click **Close** and power-cycle the ESP.
+
+### 6. Add to Home Assistant
+
+Back in the ESPHome Web UI the device should now show **ONLINE**. Home Assistant auto-discovers it under **Settings → Devices & Services**.
 
 <img src="https://github.com/hallonstedt/esphome-ecodan-heatpump/assets/55149768/123979cb-41b5-4da6-94c9-999cc6dd9497" width="300">
 
-7. Configure and add the ESPHome node to Home Assistant and it will appear as a Device.
+Configure and add the node — it appears as a regular device. Continue with [Wiring](#wiring-to-the-heat-pump) so the sensors get values.
 
-8. Now we need to connect it to the Ecodan Heatpump for the values will populate
-   
-   Cutting the cable to fit takes a few attempts. Luckily, the link above gets you 10 cables so don't worry if you happen to break one!
+---
 
-   I recommend to cut the black cable off completely so you do not accidentally connect 12V to the ESP
+## Wiring to the heat pump
 
-   The cable should look something like this when trimmed dow to fit the socket for the CN105 port (if you have a Wi-Fi dongle connected you may need to remove that from the port and connect the ESP-device in its place)
+1. Remove the black wire (pin 1) from the connector completely — it carries 12V and is not needed.
+2. If a Wi-Fi dongle is already plugged into the CN105 port, remove it first. Only one device can be connected at a time.
+3. Locate the CN105 port on your heat pump PCB — it is labelled **CN105** on the board:
 
-<img src="https://github.com/hallonstedt/esphome-ecodan-heatpump/assets/55149768/3c37f017-533e-4338-9c83-4fb7df96d063" width="400">
+   ![CN105 port on ERST20D-VM2D](https://raw.githubusercontent.com/joohann/esphome-ecodan-heatpump/main/image.jpeg)
 
-9. Connect it to the ESP and CN105 port of your Ecodan-system as illustrated in the pictures below.
+4. Connect ESP ↔ CN105 as follows:
 
-<table><tr><td>
-<img src="https://github.com/hallonstedt/esphome-ecodan-heatpump/assets/55149768/7fe0ee6e-9020-47ed-b0d4-abb33d688eab" width="400"></td>
-<td><img src="https://github.com/hallonstedt/esphome-ecodan-heatpump/assets/55149768/784ab6b1-c9bc-4738-ba68-6a278cef2244" width="400">
-</td></tr></table>
+   | CN105 Pin | Wire colour (PAP-05V-S) | ESP-01S Pin |
+   |-----------|------------------------|-------------|
+   | 2 | Red | GND |
+   | 3 | White | VCC (3.3V via power breakout) |
+   | 4 | Yellow | RX |
+   | 5 | Orange | TX |
 
+   <table><tr>
+   <td><img src="https://github.com/hallonstedt/esphome-ecodan-heatpump/assets/55149768/7fe0ee6e-9020-47ed-b0d4-abb33d688eab" width="400"></td>
+   <td><img src="https://github.com/hallonstedt/esphome-ecodan-heatpump/assets/55149768/784ab6b1-c9bc-4738-ba68-6a278cef2244" width="400"></td>
+   </tr></table>
 
-10. Within a minute or two, numbers will populate on all the sensors generated by your Ecodan Heater device in Home Assistant
+5. Within a minute or two, all sensors of your Ecodan device populate in Home Assistant:
 
-<img src="https://github.com/hallonstedt/esphome-ecodan-heatpump/assets/55149768/f15695cd-aaca-4c34-b852-bd0ec2742110" width="800">
+   <img src="https://github.com/hallonstedt/esphome-ecodan-heatpump/assets/55149768/f15695cd-aaca-4c34-b852-bd0ec2742110" width="800">
+
+---
 
 ## Cookbook
+
 ### Set room temperature from a remote sensor
-*Note that this didn't work for me, I have an external Mitsubishi control panel connected. Maybe it only works when there's no external panel connected.*
 
-It is possible to use an external temperature sensor to tell the heat pump what the room temperature is, rather than relying on its internal temperature sensor. You can do this by calling `setRemoteTemperature(float temp)` on the `ecodan` object in a lambda. Note that you can call `setRemoteTemperature(0)` to switch back to the internal temperature sensor.
+> **Note:** this may not work when an external Mitsubishi control panel is connected — it appears to only work without one.
 
-There are several ways you could make use of this functionality. One is to use a sensor automation:
+The heat pump can be told the room temperature instead of relying on its internal sensor. Call `setRemoteTemperature(float temp)` on the `ecodan` object inside a lambda. Pass `0` to fall back to the internal sensor.
+
+There are two common patterns.
+
+#### Option A — push from a sensor
 
 ```yaml
 ecodan:
@@ -119,7 +198,7 @@ ecodan:
   uart_id: ecodan_uart
 
 sensor:
-  # You could use a Bluetooth temperature sensor
+  # Bluetooth temperature sensor
   - platform: atc_mithermometer
     mac_address: "XX:XX:XX:XX:XX:XX"
     temperature:
@@ -128,7 +207,7 @@ sensor:
         then:
           - lambda: 'id(ecodan_instance).set_remote_temperature(x);'
 
-  # Or you could use a HomeAssistant sensor
+  # ...or a Home Assistant sensor
   - platform: homeassistant
     name: "Temperature Sensor From Home Assistant"
     entity_id: sensor.temperature_sensor
@@ -137,7 +216,7 @@ sensor:
         - lambda: 'id(ecodan_instance).set_remote_temperature(x);'
 ```
 
-Alternatively you could define a [service](https://www.esphome.io/components/api.html#user-defined-services) that HomeAssistant can call:
+#### Option B — expose services to Home Assistant
 
 ```yaml
 api:
@@ -153,11 +232,14 @@ api:
         - lambda: 'id(ecodan_instance).set_remote_temperature(0);'
 ```
 
-Inspired by https://github.com/geoffdavis/esphome-mitsubishiheatpump#remote-temperature.
+Inspired by [geoffdavis/esphome-mitsubishiheatpump](https://github.com/geoffdavis/esphome-mitsubishiheatpump#remote-temperature).
+
+---
 
 ## Contributing
-Let me know if there is anything you are missing or if you have improvement ideas.
+
+Open an issue or PR if something is missing or could be improved.
 
 ## Help
-Join the discussions on [Gitter](https://app.gitter.im/#/room/#Mitsubishi-CN105-Protocol-Decode_community:gitter.im)
 
+Join the discussion on [Gitter](https://app.gitter.im/#/room/#Mitsubishi-CN105-Protocol-Decode_community:gitter.im).
