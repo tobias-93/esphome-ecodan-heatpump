@@ -39,7 +39,7 @@ Inspired by [BartGijsbers/CN105Gateway](https://github.com/BartGijsbers/CN105Gat
 |------|-------|------|
 | CN105 cable | **JST PA 2.0mm** to Dupont female, 5-pin (`PAP-05V-S`) | [AliExpress](https://aliexpress.com/item/1005005562174022.html) |
 | ESP-01S | Use the **ESP-01S** — it has more memory than the plain ESP-01 | [AliExpress](https://www.aliexpress.com/item/32582736130.html) |
-| Power breakout (converts 5V to 3.3V) | | [AliExpress](https://aliexpress.com/item/1005006492591912.html) |
+| Power breakout | This board converts 5V to 3.3V | [AliExpress](https://aliexpress.com/item/1005006492591912.html) |
 | USB-to-serial adapter | Only needed for the initial flash if you don't already own one | [AliExpress](https://aliexpress.com/item/1005010685046335.html) |
 
 ### Connector
