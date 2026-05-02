@@ -154,6 +154,18 @@ Configure and add the node — it appears as a regular device. Continue with [Wi
 
 ## Wiring to the heat pump
 
+### Accessing the PCB (ERST20D-VM2D / EHSD20D-YM9D)
+
+On these cylinder unit models, the control board is behind the front panel. To access it:
+
+1. Get down on your knees — there are **two Phillips screws at the very bottom of the unit** that are easy to miss.
+2. Remove those two screws.
+3. Pull off the front panel.
+
+The control board with the CN105 port is now visible.
+
+### Connecting the cable
+
 1. Remove the black wire (pin 1) from the connector completely — it carries 12V and is not needed.
 2. If a Wi-Fi dongle is already plugged into the CN105 port, remove it first. Only one device can be connected at a time.
 3. Locate the CN105 port on your heat pump PCB — it is labelled **CN105** on the board:
