@@ -53,7 +53,7 @@ text_sensor:
       name: BSSID
   - platform: ecodan
     date_time:
-      name: Current date/time
+      name: Current date⁄time
     defrost:
       name: Defrost
     heating_stage:
@@ -61,7 +61,7 @@ text_sensor:
     operating_mode:
       name: Operating mode
     heat_cool:
-      name: Heating/cooling
+      name: Heating⁄cooling
     hot_water_timer:
       name: Hot water timer
     date_energy_cons:
