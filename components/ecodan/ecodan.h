@@ -153,9 +153,13 @@ class EcodanHeatpump : public PollingComponent, public uart::UARTDevice {
 
     void setRemoteTemperature(float value, uint8_t zone = 1);
 
-    bool isCooling() { return this->isCooling_; }
+    bool isCoolingZone1() { return this->isCoolingZone1_; }
 
-    void setCooling(bool cooling) { this->isCooling_ = cooling; }
+    bool isCoolingZone2() { return this->isCoolingZone2_; }
+
+    void setCoolingZone1(bool cooling) { this->isCoolingZone1_ = cooling; }
+
+    void setCoolingZone2(bool cooling) { this->isCoolingZone2_ = cooling; }
 
     // Sensor setters
 #define ECODAN_SET_SENSOR(s) \
@@ -202,7 +206,8 @@ class EcodanHeatpump : public PollingComponent, public uart::UARTDevice {
   private:
     bool isInitialized = false;
     int currentState = 0;
-    bool isCooling_ = false;
+    bool isCoolingZone1_ = false;
+    bool isCoolingZone2_ = false;
     
     // State machine variables
     enum class ComponentState {

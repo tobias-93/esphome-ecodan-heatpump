@@ -60,8 +60,6 @@ text_sensor:
       name: Heating stage
     operating_mode:
       name: Operating mode
-    heat_cool:
-      name: Heating⁄cooling
     hot_water_timer:
       name: Hot water timer
     date_energy_cons:
