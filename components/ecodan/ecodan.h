@@ -74,7 +74,7 @@ const uint8_t CONNECT[CONNECT_LEN] = {0xfc, 0x5a, 0x02, 0x7a, 0x02, 0xca, 0x01, 
 #define COMMA ,
 
 class EcodanHeatpump;
-class EcodanSwitch : public switch_::Switch, public Component {
+class EcodanSwitch: public switch_::Switch, public Component {
   public:
     void dump_config() override;
     void set_key(string key) {this->key_ = key;}
