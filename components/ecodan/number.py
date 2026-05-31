@@ -58,6 +58,8 @@ async def to_code(config):
     heatpump = await cg.get_variable(config[CONF_ECODAN_ID])
 
     numbers = []
+    genericNumbers = []
+    heatCoolNumbers = []
     for key, conf in config.items():
         if not isinstance(conf, dict):
             continue
@@ -67,26 +69,32 @@ async def to_code(config):
                 min_value = 40
                 max_value = 60
                 step = 1
+                genericNumbers.append(f"F({key})")
             elif key == CONF_ZONE1_ROOM_TEMP_SETPOINT:
                 min_value = 10
                 max_value = 30
                 step = 0.5
+                heatCoolNumbers.append(f"F({key})")
             elif key == CONF_ZONE1_FLOW_TEMP_SETPOINT:
                 min_value = 5
                 max_value = 60
                 step = 0.5
+                heatCoolNumbers.append(f"F({key})")
             elif key == CONF_ZONE2_ROOM_TEMP_SETPOINT:
                 min_value = 10
                 max_value = 30
                 step = 0.5
+                heatCoolNumbers.append(f"F({key})")
             elif key == CONF_ZONE2_FLOW_TEMP_SETPOINT:
                 min_value = 5
                 max_value = 60
                 step = 0.5
+                heatCoolNumbers.append(f"F({key})")
             else:
                 min_value = 0
                 max_value = 100
                 step = 1
+                genericNumbers.append(f"F({key})")
             var = await number.new_number(conf, min_value=min_value, max_value=max_value, step=step)
             cg.add(getattr(heatpump, f"set_{key}")(var))
             cg.add(var.set_key(key))
@@ -94,4 +102,10 @@ async def to_code(config):
 
     cg.add_define(
         "ECODAN_NUMBER_LIST(F, sep)", cg.RawExpression(" sep ".join(numbers))
+    )
+    cg.add_define(
+        "ECODAN_NUMBER_GENERIC_LIST(F, sep)", cg.RawExpression(" sep ".join(genericNumbers))
+    )
+    cg.add_define(
+        "ECODAN_NUMBER_HEATCOOL_LIST(F, sep)", cg.RawExpression(" sep ".join(heatCoolNumbers))
     )
