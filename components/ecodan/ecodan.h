@@ -29,10 +29,6 @@
 #define INIT_RETRY_DELAY_MS 1000 // Delay between init retries
 #define INIT_RETRY_INTERVAL_MS 2000 // Interval between initialization attempts
 
-// Temperature limits for validation
-#define MIN_TEMPERATURE 10.0f // Minimum temperature in °C
-#define MAX_TEMPERATURE 30.0f // Maximum temperature in °C
-
 namespace esphome {
 namespace ecodan_ {
 

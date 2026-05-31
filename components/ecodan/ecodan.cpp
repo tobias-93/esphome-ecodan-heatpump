@@ -74,17 +74,6 @@ void EcodanNumber::dump_config() {
 }
 
 void EcodanNumber::control(float value) {
-  // Validate temperature range for room temperature setpoints (not legionella or hot water)
-  if (this->key_.find("temp_setpoint") != std::string::npos && 
-      this->key_.find("legionella") == std::string::npos &&
-      this->key_.find("hot_water") == std::string::npos) {
-    if (value < MIN_TEMPERATURE || value > MAX_TEMPERATURE) {
-      ESP_LOGW(TAG, "Temperature %.1f°C out of range [%.1f-%.1f°C], ignoring", 
-               value, MIN_TEMPERATURE, MAX_TEMPERATURE);
-      return;
-    }
-  }
-  
   uint8_t sendBuffer[PACKET_BUFFER_SIZE], temp1, temp2;
   uint16_t temperature = value * 100;
   temp1 = (uint8_t) (temperature >> 8);
@@ -197,12 +186,6 @@ void EcodanClimate::control(const climate::ClimateCall &call) {
 
   if (call.get_target_temperature().has_value()) {
     float target_temp = *call.get_target_temperature();
-    
-    if (target_temp < this->min_temperature_ || target_temp > this->max_temperature_) {
-      ESP_LOGW(TAG, "Climate Zone %d: Temperature %.1f°C out of range [%.1f-%.1f°C]", 
-               this->zone_, target_temp, this->min_temperature_, this->max_temperature_);
-      return;
-    }
     
     target_temp = round(target_temp / this->temperature_step_) * this->temperature_step_;
     
@@ -588,13 +571,6 @@ void EcodanHeatpump::setRemoteTemperature(float value, uint8_t zone) {
   }
   
   if (value > 0) {
-    // Validate temperature range
-    if (value < MIN_TEMPERATURE || value > MAX_TEMPERATURE) {
-      ESP_LOGW(TAG, "Remote temperature %.1f°C out of range [%.1f-%.1f°C], ignoring", 
-               value, MIN_TEMPERATURE, MAX_TEMPERATURE);
-      return;
-    }
-    
     ESP_LOGI(TAG, "Setting Zone %d remote temperature to %.1f°C", zone, value);
     
     if (zone == 1) {
