@@ -132,6 +132,7 @@ void EcodanNumber::control(float value) {
           cooling = this->heatpump_->isCoolingZone2(); \
         } else { \
           ESP_LOGE(TAG, "Climate: Invalid zone %s", this->key_); \
+          return; \
         } \
         if (cooling) { \
           memcpy(sendBuffer, command_cooling_##hcnb::packetMask, PACKET_BUFFER_SIZE); \
@@ -168,9 +169,9 @@ climate::ClimateTraits EcodanClimate::traits() {
   auto traits = climate::ClimateTraits();
   traits.add_feature_flags(climate::CLIMATE_SUPPORTS_CURRENT_TEMPERATURE);
   traits.clear_feature_flags(climate::CLIMATE_REQUIRES_TWO_POINT_TARGET_TEMPERATURE);
-  traits.set_visual_min_temperature(this->min_temperature_);
-  traits.set_visual_max_temperature(this->max_temperature_);
-  traits.set_visual_target_temperature_step(this->temperature_step_);
+  traits.set_visual_min_temperature(10.0f);
+  traits.set_visual_max_temperature(30.0f);
+  traits.set_visual_target_temperature_step(0.5f);
   traits.set_visual_current_temperature_step(0.1f);
   
   traits.set_supported_modes({
@@ -193,8 +194,9 @@ void EcodanClimate::control(const climate::ClimateCall &call) {
 
   if (call.get_target_temperature().has_value()) {
     float target_temp = *call.get_target_temperature();
+    float step = this->get_traits().get_visual_target_temperature_step();
     
-    target_temp = round(target_temp / this->temperature_step_) * this->temperature_step_;
+    target_temp = round(target_temp / step) * step;
     
     if (std::abs(this->target_temperature - target_temp) > 0.01f) {
       uint8_t sendBuffer[PACKET_BUFFER_SIZE];
@@ -285,22 +287,6 @@ void EcodanClimate::control(const climate::ClimateCall &call) {
   }
 
   if (state_changed) {
-    this->publish_state();
-  }
-}
-
-void EcodanClimate::update_current_temperature(float temperature) {
-  if (this->current_temperature != temperature) {
-    this->current_temperature = temperature;
-    this->publish_state();
-  }
-}
-
-void EcodanClimate::update_target_temperature(float temperature) {
-  bool first_update = std::isnan(this->target_temperature);
-  
-  if (!std::isnan(temperature) && (first_update || std::abs(this->target_temperature - temperature) > 0.01f)) {
-    this->target_temperature = temperature;
     this->publish_state();
   }
 }
@@ -491,10 +477,14 @@ void EcodanHeatpump::parsePacket(uint8_t *packet) {
     // 2 = Zone 1 active
     // 3 = Zone 2 active
     // 1 = Both zones active
-    if (this->climate_zone1_ != nullptr) {
+    if (this->climate_zone1_ != nullptr && this->climate_zone1_->zone_activity_action_) {
       if (zone_activity == 2 || zone_activity == 1) {
         // Zone 1 is active
-        this->climate_zone1_->action = climate::CLIMATE_ACTION_HEATING;
+        if (this->isCoolingZone1()) {
+          this->climate_zone1_->action = climate::CLIMATE_ACTION_COOLING;
+        } else {
+          this->climate_zone1_->action = climate::CLIMATE_ACTION_HEATING;
+        }
       } else {
         // Zone 1 is idle
         this->climate_zone1_->action = climate::CLIMATE_ACTION_IDLE;
@@ -502,10 +492,14 @@ void EcodanHeatpump::parsePacket(uint8_t *packet) {
       this->climate_zone1_->publish_state();
     }
     
-    if (this->climate_zone2_ != nullptr) {
+    if (this->climate_zone2_ != nullptr && this->climate_zone2_->zone_activity_action_) {
       if (zone_activity == 3 || zone_activity == 1) {
         // Zone 2 is active
-        this->climate_zone2_->action = climate::CLIMATE_ACTION_HEATING;
+        if (this->isCoolingZone2()) {
+          this->climate_zone2_->action = climate::CLIMATE_ACTION_COOLING;
+        } else {
+          this->climate_zone2_->action = climate::CLIMATE_ACTION_HEATING;
+        }
       } else {
         // Zone 2 is idle
         this->climate_zone2_->action = climate::CLIMATE_ACTION_IDLE;
@@ -514,30 +508,55 @@ void EcodanHeatpump::parsePacket(uint8_t *packet) {
     }
   }
 
+  if (field_operating_mode::address == packet[5] && 0x62 == packet[1]) {
+    auto operating_mode = parsePacketTextItem(packet, field_operating_mode::varType, field_operating_mode::varIndex);
+    climate::ClimateAction action;
+    if (operating_mode == "Cooling") {
+      action = climate::CLIMATE_ACTION_COOLING;
+    } else if (operating_mode == "Heating") {
+      action = climate::CLIMATE_ACTION_HEATING;
+    } else {
+      action = climate::CLIMATE_ACTION_IDLE;
+    }
+    if (this->climate_zone1_ != nullptr && !this->climate_zone1_->zone_activity_action_) {
+      this->climate_zone1_->action = action;
+      this->climate_zone1_->publish_state();
+    }
+    
+    if (this->climate_zone2_ != nullptr && !this->climate_zone2_->zone_activity_action_) {
+      this->climate_zone2_->action = action;
+      this->climate_zone2_->publish_state();
+    }
+  }
+
   // Update climate entities with zone temperature readings
   if (field_zone1_room_temperature::address == packet[5] && 0x62 == packet[1] && this->climate_zone1_ != nullptr) {
     auto temperature = parsePacketNumberItem(packet, field_zone1_room_temperature::varType, field_zone1_room_temperature::varIndex);
     ESP_LOGV(TAG, "Updating Climate Zone 1 current temperature to %.1f°C", temperature);
-    this->climate_zone1_->update_current_temperature(temperature);
+    this->climate_zone1_->current_temperature = temperature;
+    this->climate_zone1_->publish_state();
   }
   
   if (field_zone2_room_temperature::address == packet[5] && 0x62 == packet[1] && this->climate_zone2_ != nullptr) {
     auto temperature = parsePacketNumberItem(packet, field_zone2_room_temperature::varType, field_zone2_room_temperature::varIndex);
     ESP_LOGV(TAG, "Updating Climate Zone 2 current temperature to %.1f°C", temperature);
-    this->climate_zone2_->update_current_temperature(temperature);
+    this->climate_zone2_->current_temperature = temperature;
+    this->climate_zone2_->publish_state();
   }
 
   // Update climate entities with zone setpoint readings from heat pump
   if (field_zone1_room_temp_setpoint::address == packet[5] && 0x62 == packet[1] && this->climate_zone1_ != nullptr) {
     auto setpoint = parsePacketNumberItem(packet, field_zone1_room_temp_setpoint::varType, field_zone1_room_temp_setpoint::varIndex);
     ESP_LOGD(TAG, "Updating Climate Zone 1 target temperature from heat pump: %.1f°C", setpoint);
-    this->climate_zone1_->update_target_temperature(setpoint);
+    this->climate_zone1_->target_temperature = setpoint;
+    this->climate_zone1_->publish_state();
   }
   
   if (field_zone2_room_temp_setpoint::address == packet[5] && 0x62 == packet[1] && this->climate_zone2_ != nullptr) {
     auto setpoint = parsePacketNumberItem(packet, field_zone2_room_temp_setpoint::varType, field_zone2_room_temp_setpoint::varIndex);
     ESP_LOGD(TAG, "Updating Climate Zone 2 target temperature from heat pump: %.1f°C", setpoint);
-    this->climate_zone2_->update_target_temperature(setpoint);
+    this->climate_zone2_->target_temperature = setpoint;
+    this->climate_zone2_->publish_state();
   }
 
   if (field_mode_select_zone1::address == packet[5] && 0x62 == packet[1] && this->climate_zone1_ != nullptr) {
@@ -769,7 +788,12 @@ void EcodanHeatpump::buildEntityList() {
   
   // Always add zone activity status for climate actions (if any climate entities are configured)
   if (this->climate_zone1_ != nullptr || this->climate_zone2_ != nullptr) {
-    addEntityIfNotPresent(field_zone_activity_status::address, "climate", "zone activity status reading for climate actions");
+    if (this->climate_zone1_->zone_activity_action_ || this->climate_zone2_->zone_activity_action_) {
+      addEntityIfNotPresent(field_zone_activity_status::address, "climate", "zone activity status reading for climate actions");
+    }
+    if (!this->climate_zone1_->zone_activity_action_ || !this->climate_zone2_->zone_activity_action_) {
+      addEntityIfNotPresent(field_operating_mode::address, "climate", "Operating mode for climate status");
+    }
   }
   
   ESP_LOGI(TAG, "Built entity list with %d unique addresses", entity_list_.size());

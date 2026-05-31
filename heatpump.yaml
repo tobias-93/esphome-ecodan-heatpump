@@ -187,9 +187,6 @@ switch:
 
 select:
   - platform: ecodan
-    # Legacy single key (maps to zone1). Prefer using zone specific keys below.
-    # mode_select:
-    #   name: Mode
     mode_select_zone1:
       name: Mode Zone 1
     mode_select_zone2:
@@ -213,7 +210,10 @@ number:
 # Climate entities for zone temperature control (alternative to number entities above)
 climate:
   - platform: ecodan
+    id: ecodan_climate
     zone1:
+      id: zone_1_thermostat
       name: "Zone 1 Thermostat"
     zone2:
+      id: zone_2_thermostat
       name: "Zone 2 Thermostat"

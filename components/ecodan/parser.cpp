@@ -155,20 +155,6 @@ static string parseDeFrost(uint8_t *packet, uint8_t index) {
   }
 }
 
-static string parseHeatCool(uint8_t *packet, uint8_t index) {
-  switch (packet[index]) {
-  case 0:
-    return "Off";
-  case 1:
-  case 2:
-    return "Heating Mode";
-  case 4:
-    return "Cooling Mode";
-  default:
-    return unknownValue(packet[index]);
-  }
-}
-
 static string parseDate(uint8_t *packet, uint8_t index) {
   char textStr[50];
   sprintf(textStr, "20%d/%02d/%02d", packet[index],
@@ -214,8 +200,6 @@ string parsePacketTextItem(uint8_t *packet, varTypeEnum varType, uint8_t index) 
     return parseModeSetting(packet, index);
   case VarType_DEFROST:
     return parseDeFrost(packet, index);
-  case VarType_HEAT_COOL:
-    return parseHeatCool(packet, index);
   case VarType_DATE:
     return parseDate(packet, index);
   case VarType_ON_OFF:

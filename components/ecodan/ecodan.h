@@ -111,30 +111,18 @@ class EcodanNumber: public number::Number, public Component {
 
 class EcodanClimate: public climate::Climate, public Component {
   public:
+    bool zone_activity_action_;
+
     void setup() override;
     void dump_config() override;
     void set_zone(uint8_t zone) { this->zone_ = zone; }
     void set_heatpump(EcodanHeatpump* heatpump) { this->heatpump_ = heatpump; }
-    void set_temperature_range(float min_temp, float max_temp) {
-      this->min_temperature_ = min_temp;
-      this->max_temperature_ = max_temp;
-    }
-    void set_temperature_step(float step) { this->temperature_step_ = step; }
-    
-    // Called when current temperature is updated from sensor data
-    void update_current_temperature(float temperature);
-    
-    // Called when target temperature is updated from heat pump data
-    void update_target_temperature(float temperature);
-
+    void set_zone_activity_action(bool zone_activity_action) { this->zone_activity_action_ = zone_activity_action; }
   protected:
     void control(const climate::ClimateCall &call) override;
     climate::ClimateTraits traits() override;
 
     uint8_t zone_ = 1;
-    float min_temperature_ = 10.0f;
-    float max_temperature_ = 30.0f;
-    float temperature_step_ = 0.5f;
     EcodanHeatpump* heatpump_ = nullptr;
 };
 
