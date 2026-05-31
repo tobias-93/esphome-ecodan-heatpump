@@ -3,7 +3,6 @@ import esphome.config_validation as cv
 from esphome.components import number
 from esphome.const import (
     DEVICE_CLASS_TEMPERATURE,
-    CONF_ID,
     UNIT_CELSIUS,
 )
 from . import ECODAN, CONF_ECODAN_ID, ecodan_ns
@@ -73,7 +72,7 @@ async def to_code(config):
                 max_value = 30
                 step = 0.5
             elif key == CONF_ZONE1_FLOW_TEMP_SETPOINT:
-                min_value = 20
+                min_value = 5
                 max_value = 60
                 step = 0.5
             elif key == CONF_ZONE2_ROOM_TEMP_SETPOINT:
@@ -81,7 +80,7 @@ async def to_code(config):
                 max_value = 30
                 step = 0.5
             elif key == CONF_ZONE2_FLOW_TEMP_SETPOINT:
-                min_value = 20
+                min_value = 5
                 max_value = 60
                 step = 0.5
             else:

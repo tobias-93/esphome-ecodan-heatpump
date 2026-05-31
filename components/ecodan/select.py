@@ -1,10 +1,6 @@
 import esphome.codegen as cg
 import esphome.config_validation as cv
 from esphome.components import select
-from esphome.const import (
-    CONF_ID,
-    CONF_OPTIONS,
-)
 from . import ECODAN, CONF_ECODAN_ID, ecodan_ns
 
 AUTO_LOAD = ["ecodan"]
