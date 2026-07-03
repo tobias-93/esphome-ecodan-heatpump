@@ -173,6 +173,26 @@ static string parseOnOffText(uint8_t *packet, uint8_t index) {
   }
 }
 
+// DHW heat source (0x05 payload byte 6 / packet index 11)
+// Values per FTC6 protocol: 0=Heat Pump, 1=Immersion Heater, 2=Booster Heater,
+// 3=Immersion + Booster, 4=External Boiler
+static string parseDHWHeatSource(uint8_t *packet, uint8_t index) {
+  switch (packet[index]) {
+  case 0:
+    return "Heat Pump";
+  case 1:
+    return "Immersion Heater";
+  case 2:
+    return "Booster Heater";
+  case 3:
+    return "Immersion + Booster";
+  case 4:
+    return "External Boiler";
+  default:
+    return unknownValue(packet[index]);
+  }
+}
+
 static string parseHeatStage(uint8_t *packet, uint8_t index) {
   switch (packet[index]) {
   case 0:
@@ -183,6 +203,21 @@ static string parseHeatStage(uint8_t *packet, uint8_t index) {
     return "Boost";
   case 3:
     return "Hot Water";
+  default:
+    return unknownValue(packet[index]);
+  }
+}
+
+// DHW running mode (0x05 payload byte 7 / packet index 12)
+// 0=Off (same byte also used by force_dhw switch — switch reads true only on 1)
+static string parseDHWRunningMode(uint8_t *packet, uint8_t index) {
+  switch (packet[index]) {
+  case 0:
+    return "Off";
+  case 1:
+    return "Heat Pump Phase";
+  case 2:
+    return "Heater Phase";
   default:
     return unknownValue(packet[index]);
   }
@@ -206,6 +241,8 @@ string parsePacketTextItem(uint8_t *packet, varTypeEnum varType, uint8_t index) 
     return parseOnOffText(packet, index);
   case VarType_HEAT_STAGE:
     return parseHeatStage(packet, index);
+  case VarType_DHW_RUNNING_MODE:
+    return parseDHWRunningMode(packet, index);
   default:
     return "";
   }

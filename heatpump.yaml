@@ -1,5 +1,5 @@
 external_components:
-  - source: github://tobias-93/esphome-ecodan-heatpump@future-climate-2zone
+  - source: github://gg-home/esphome-ecodan-heatpump@future-climate-2zone
     components: [ ecodan ]
 
 logger:
@@ -68,6 +68,8 @@ text_sensor:
       name: Date energy production      
     holiday_mode:
       name: Holiday mode
+    dhw_running_mode:
+      name: DHW running mode
 
 sensor:
   - platform: uptime
@@ -122,6 +124,10 @@ sensor:
       id: energy_dhw_prod_yesterday
     energy_consumed_increasing:
       name: Total energy consumed
+    # Input power drawn by the heat pump compressor (floor kW integer steps).
+    # This is the electricity the pump actually consumes, not the thermal output.
+    input_power:
+      name: Input power (consumed)
 
   # Calculated CoP (yesterday) as ratio of production/consumption
   - platform: template
@@ -184,6 +190,23 @@ switch:
       name: Force DHW
     holiday_mode:
       name: Holiday Mode
+    # ── Server Control Mode & Prohibit switches ───────────────────────────────
+    # The prohibit_* switches automatically enable Server Control Mode in the
+    # same packet they send, so you do not need to manually turn on
+    # server_control_mode first.  Use server_control_mode to explicitly release
+    # SCM when you no longer need any prohibits.
+    server_control_mode:
+      name: Server control mode
+    prohibit_dhw:
+      name: Prohibit DHW
+    prohibit_heating_zone1:
+      name: Prohibit heating zone 1
+    prohibit_cooling_zone1:
+      name: Prohibit cooling zone 1
+    prohibit_heating_zone2:
+      name: Prohibit heating zone 2
+    prohibit_cooling_zone2:
+      name: Prohibit cooling zone 2
 
 select:
   - platform: ecodan

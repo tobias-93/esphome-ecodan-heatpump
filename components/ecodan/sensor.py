@@ -2,6 +2,7 @@ import esphome.codegen as cg
 import esphome.config_validation as cv
 from esphome.components import sensor
 from esphome.const import (
+    CONF_ID,
     DEVICE_CLASS_ENERGY,
     DEVICE_CLASS_FREQUENCY,
     DEVICE_CLASS_POWER,
@@ -37,6 +38,13 @@ CONFIG_SCHEMA = cv.Schema(
         cv.Optional("output_power"): sensor.sensor_schema(
             unit_of_measurement=UNIT_KILOWATT,
             icon="mdi:home-lightning-bolt",
+            accuracy_decimals=3,
+            device_class=DEVICE_CLASS_POWER,
+            state_class=STATE_CLASS_MEASUREMENT,
+        ),
+        cv.Optional("input_power"): sensor.sensor_schema(
+            unit_of_measurement=UNIT_KILOWATT,
+            icon="mdi:lightning-bolt",
             accuracy_decimals=3,
             device_class=DEVICE_CLASS_POWER,
             state_class=STATE_CLASS_MEASUREMENT,
@@ -102,13 +110,11 @@ CONFIG_SCHEMA = cv.Schema(
             icon="mdi:clock",
             entity_category=ENTITY_CATEGORY_DIAGNOSTIC,
         ),
-        
         # Zone activity status sensor (shows which zones are active)
         cv.Optional("zone_activity_status"): sensor.sensor_schema(
             icon="mdi:home-thermometer",
             entity_category=ENTITY_CATEGORY_DIAGNOSTIC,
         ),
-        
         cv.Optional("water_flow"): sensor.sensor_schema(
             unit_of_measurement="l/m",
             icon="mdi:waves-arrow-right",
@@ -167,17 +173,17 @@ CONFIG_SCHEMA = cv.Schema(
 ).extend(cv.COMPONENT_SCHEMA)
 
 
-def to_code(config):
-    heatpump = yield cg.get_variable(config[CONF_ECODAN_ID])
+async def to_code(config):
+    heatpump = await cg.get_variable(config[CONF_ECODAN_ID])
 
     sensors = []
     for key, conf in config.items():
         if not isinstance(conf, dict):
             continue
-        id = conf.get("id")
-        if id and id.type == sensor.Sensor:
-            s = yield sensor.new_sensor(conf)
-            cg.add(getattr(heatpump, f"set_{key}")(s))
-            sensors.append(f"F({key})")
+        if CONF_ID not in conf:
+            continue
+        s = await sensor.new_sensor(conf)
+        cg.add(getattr(heatpump, f"set_{key}")(s))
+        sensors.append(f"F({key})")
 
     cg.add_define("ECODAN_SENSOR_LIST(F, sep)", cg.RawExpression(" sep ".join(sensors)))
