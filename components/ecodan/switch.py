@@ -50,11 +50,9 @@ async def to_code(config):
     switches = []
     for key, conf in config.items():
         if not isinstance(conf, dict):
-            continue
+            continue                    # skips ecodan_id (a variable ref, not a dict)
         if CONF_ID not in conf:
-            continue
-        if conf[CONF_ID].type != EcodanSwitch:
-            continue
+            continue                    # skips any dict without an entity ID
         var = await switch.new_switch(conf)
         cg.add(getattr(heatpump, f"set_{key}")(var))
         cg.add(var.set_key(key))
