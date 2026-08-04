@@ -1,4 +1,4 @@
-import esphome.codegen as cg
+﻿import esphome.codegen as cg
 import esphome.config_validation as cv
 from esphome.components import climate
 from esphome.const import CONF_ID
@@ -30,36 +30,34 @@ CONFIG_SCHEMA = cv.Schema(
 
 
 async def to_code(config):
-    # Original check (id.type == climate.Climate) always evaluated False because
-    # climate_schema(class_=EcodanClimate) gives the ID type EcodanClimate, not
-    # climate.Climate.  Fixed by comparing against EcodanClimate explicitly.
     heatpump = await cg.get_variable(config[CONF_ECODAN_ID])
 
     climates = []
     for zone_key, conf in config.items():
         if not isinstance(conf, dict):
             continue
-        if CONF_ID not in conf:
+
+        if zone_key not in (CONF_ZONE1, CONF_ZONE2):
             continue
-        if conf[CONF_ID].type != EcodanClimate:
+
+        if CONF_ID not in conf:
             continue
 
         var = await climate.new_climate(conf)
+        await cg.register_component(var, conf)
 
         if zone_key == CONF_ZONE1:
             cg.add(var.set_zone(1))
             zone_name = "zone1"
-        elif zone_key == CONF_ZONE2:
+        else:
             cg.add(var.set_zone(2))
             zone_name = "zone2"
-        else:
-            continue
 
         cg.add(getattr(heatpump, f"set_climate_{zone_name}")(var))
         cg.add(var.set_zone_activity_action(conf[CONF_ZONE_ACTIVITY_ACTION]))
         climates.append(f"F({zone_name})")
-
     if climates:
         cg.add_define(
             "ECODAN_CLIMATE_LIST(F, sep)", cg.RawExpression(" sep ".join(climates))
         )
+
