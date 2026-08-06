@@ -17,6 +17,12 @@ constexpr uint8_t ecodan::commands::command_cooling_zone2_room_temp_setpoint::pa
 constexpr uint8_t ecodan::commands::command_cooling_zone2_flow_temp_setpoint::packetMask[PACKET_BUFFER_SIZE];
 constexpr uint8_t ecodan::commands::command_zone1_room_temp::packetMask[PACKET_BUFFER_SIZE];
 constexpr uint8_t ecodan::commands::command_zone2_room_temp::packetMask[PACKET_BUFFER_SIZE];
+constexpr uint8_t ecodan::commands::command_server_control_mode::packetMask[PACKET_BUFFER_SIZE];
+constexpr uint8_t ecodan::commands::command_prohibit_dhw::packetMask[PACKET_BUFFER_SIZE];
+constexpr uint8_t ecodan::commands::command_prohibit_heating_zone1::packetMask[PACKET_BUFFER_SIZE];
+constexpr uint8_t ecodan::commands::command_prohibit_cooling_zone1::packetMask[PACKET_BUFFER_SIZE];
+constexpr uint8_t ecodan::commands::command_prohibit_heating_zone2::packetMask[PACKET_BUFFER_SIZE];
+constexpr uint8_t ecodan::commands::command_prohibit_cooling_zone2::packetMask[PACKET_BUFFER_SIZE];
 
 namespace esphome {
 namespace ecodan_ {
@@ -36,6 +42,8 @@ void EcodanSwitch::write_state(bool state) {
       send = true; \
       memcpy(sendBuffer, command_##sw::packetMask, PACKET_BUFFER_SIZE); \
       sendBuffer[command_##sw::varIndex] = state ? 1 : 0; \
+      if (this->key_ == "zone1_cooling_prohibit") \
+        sendBuffer[15] = 1; \
     }
     ECODAN_SWITCH_LIST(ECODAN_WRITE_SWITCH, )
   if (send == false) {

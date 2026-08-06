@@ -1,5 +1,5 @@
 external_components:
-  - source: github://tobias-93/esphome-ecodan-heatpump@future-climate-2zone
+  - source: github://gg-home/esphome-ecodan-heatpump@future-climate-2zone
     components: [ ecodan ]
 
 logger:
@@ -97,7 +97,10 @@ text_sensor:
       name: Date energy production      
     holiday_mode:
       name: Holiday mode
-  
+    # DHW running mode (0x05 byte 7): Off / Heat Pump Phase / Heater Phase
+    dhw_running_mode:
+      name: DHW running mode
+
   # Hot water specific text sensors
   - platform: ecodan
     hot_water_timer:
@@ -133,6 +136,9 @@ sensor:
       name: Water flow
     energy_consumed_increasing:
       name: Total energy consumed
+    # Input power drawn by the heat pump compressor (floor kW integer steps).
+    input_power:
+      name: Input power (consumed)
     energy_cons_yesterday:
       name: Heating energy consumption (yesterday)
       id: energy_cons_yesterday
@@ -234,11 +240,31 @@ switch:
       name: Power state
     holiday_mode:
       name: Holiday Mode
-  
+    # Server Control Mode — required by the FTC before prohibit commands are
+    # accepted.  The prohibit_* switches below enable it automatically in the
+    # same packet, so manual activation is not usually needed.
+    server_control_mode:
+      name: Server control mode
+    prohibit_heating_zone1:
+      name: Prohibit heating
+      device_id: zone1_device
+    prohibit_cooling_zone1:
+      name: Prohibit cooling
+      device_id: zone1_device
+    prohibit_heating_zone2:
+      name: Prohibit heating
+      device_id: zone2_device
+    prohibit_cooling_zone2:
+      name: Prohibit cooling
+      device_id: zone2_device
+
   # Hot water specific switches
   - platform: ecodan
     force_dhw:
       name: Force DHW
+      device_id: hotwater_device
+    prohibit_dhw:
+      name: Prohibit DHW
       device_id: hotwater_device
 
 select:
