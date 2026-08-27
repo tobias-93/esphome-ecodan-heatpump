@@ -351,6 +351,19 @@ void EcodanHeatpump::receiveSerialPacket() {
   }
 }
 
+static void logRawPacket(const char *tag, const uint8_t *data, uint8_t checksum_index) {
+  char buffer[128];
+  int pos = 0;
+
+  buffer[0] = '\0';
+
+  for (int i = 0; i <= checksum_index && pos < sizeof(buffer) - 4; i++) {
+    pos += snprintf(buffer + pos, sizeof(buffer) - pos, "%02X ", data[i]);
+  }
+
+  ESP_LOGI(tag, "RAW RX: %s", buffer);
+}
+
 int EcodanHeatpump::readPacket(uint8_t *data) {
   // Non-blocking read - only process available bytes
   while (available() > 0) {
@@ -386,6 +399,7 @@ int EcodanHeatpump::readPacket(uint8_t *data) {
             uint8_t checksum = calculateCheckSum(data);
             
             if (data[expected_length_] == checksum) {
+              logRawPacket(TAG, data, expected_length_);
               // Reset state for next packet
               read_state_ = 0;
               bytes_read_ = 0;
