@@ -28,6 +28,7 @@ enum varTypeEnum {
   VarType_ON_OFF,
   VarType_HEAT_STAGE,
   VarType_TOTAL_ENERGY,
+  VarType_DHW_RUNNING_MODE,  // 0=Off, 1=Heat Pump Phase, 2=Heater Phase
 };
 
 namespace fields {
@@ -39,6 +40,7 @@ namespace fields {
     static constexpr varTypeEnum varType = d_varType; \
   }
 
+// ── EXISTING FIELDS (unchanged) ───────────────────────────────────────────────
 // Numeric fields
 DEFINE_FIELD(error_code, 0x03, 7, VarType_2BYTEHEXVALUE);
 DEFINE_FIELD(frequency, 0x04, 6, VarType_DECVALUE);
@@ -95,6 +97,24 @@ DEFINE_FIELD(holiday_mode, 0x28, 9, VarType_ON_OFF);
 // Boolean fields
 DEFINE_FIELD(power_state, 0x26, 8, VarType_ON_OFF);
 DEFINE_FIELD(force_dhw, 0x05, 12, VarType_ON_OFF);
+
+
+DEFINE_FIELD(input_power, 0x07, 9, VarType_DECVALUE);
+DEFINE_FIELD(dhw_running_mode, 0x05, 12, VarType_DHW_RUNNING_MODE);
+
+DEFINE_FIELD(booster_heater1_active, 0x14, 7, VarType_ON_OFF);
+DEFINE_FIELD(booster_heater2_active, 0x14, 8, VarType_ON_OFF);
+DEFINE_FIELD(immersion_heater_active, 0x14, 10, VarType_ON_OFF);
+
+// Forced DHW (boost) mode currently active: from 0x28 payload byte 3 (packet index 8)
+DEFINE_FIELD(dhw_boost_active, 0x28, 8, VarType_ON_OFF);
+DEFINE_FIELD(prohibit_dhw, 0x28, 10, VarType_ON_OFF);
+DEFINE_FIELD(prohibit_heating_zone1, 0x28, 11, VarType_ON_OFF);
+DEFINE_FIELD(prohibit_cooling_zone1, 0x28, 12, VarType_ON_OFF);
+DEFINE_FIELD(prohibit_heating_zone2, 0x28, 13, VarType_ON_OFF);
+DEFINE_FIELD(prohibit_cooling_zone2, 0x28, 14, VarType_ON_OFF);
+DEFINE_FIELD(server_control_mode, 0x28, 15, VarType_ON_OFF);
+
 } // namespace fields
 } // namespace ecodan
 

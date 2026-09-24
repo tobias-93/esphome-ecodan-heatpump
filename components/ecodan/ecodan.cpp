@@ -17,6 +17,12 @@ constexpr uint8_t ecodan::commands::command_cooling_zone2_room_temp_setpoint::pa
 constexpr uint8_t ecodan::commands::command_cooling_zone2_flow_temp_setpoint::packetMask[PACKET_BUFFER_SIZE];
 constexpr uint8_t ecodan::commands::command_zone1_room_temp::packetMask[PACKET_BUFFER_SIZE];
 constexpr uint8_t ecodan::commands::command_zone2_room_temp::packetMask[PACKET_BUFFER_SIZE];
+constexpr uint8_t ecodan::commands::command_server_control_mode::packetMask[PACKET_BUFFER_SIZE];
+constexpr uint8_t ecodan::commands::command_prohibit_dhw::packetMask[PACKET_BUFFER_SIZE];
+constexpr uint8_t ecodan::commands::command_prohibit_heating_zone1::packetMask[PACKET_BUFFER_SIZE];
+constexpr uint8_t ecodan::commands::command_prohibit_cooling_zone1::packetMask[PACKET_BUFFER_SIZE];
+constexpr uint8_t ecodan::commands::command_prohibit_heating_zone2::packetMask[PACKET_BUFFER_SIZE];
+constexpr uint8_t ecodan::commands::command_prohibit_cooling_zone2::packetMask[PACKET_BUFFER_SIZE];
 
 namespace esphome {
 namespace ecodan_ {
@@ -36,6 +42,8 @@ void EcodanSwitch::write_state(bool state) {
       send = true; \
       memcpy(sendBuffer, command_##sw::packetMask, PACKET_BUFFER_SIZE); \
       sendBuffer[command_##sw::varIndex] = state ? 1 : 0; \
+      if (this->key_ == "zone1_cooling_prohibit") \
+        sendBuffer[15] = 1; \
     }
     ECODAN_SWITCH_LIST(ECODAN_WRITE_SWITCH, )
   if (send == false) {
@@ -343,6 +351,19 @@ void EcodanHeatpump::receiveSerialPacket() {
   }
 }
 
+static void logRawPacket(const char *tag, const uint8_t *data, uint8_t checksum_index) {
+  char buffer[128];
+  int pos = 0;
+
+  buffer[0] = '\0';
+
+  for (int i = 0; i <= checksum_index && pos < sizeof(buffer) - 4; i++) {
+    pos += snprintf(buffer + pos, sizeof(buffer) - pos, "%02X ", data[i]);
+  }
+
+  ESP_LOGI(tag, "RAW RX: %s", buffer);
+}
+
 int EcodanHeatpump::readPacket(uint8_t *data) {
   // Non-blocking read - only process available bytes
   while (available() > 0) {
@@ -378,6 +399,7 @@ int EcodanHeatpump::readPacket(uint8_t *data) {
             uint8_t checksum = calculateCheckSum(data);
             
             if (data[expected_length_] == checksum) {
+              logRawPacket(TAG, data, expected_length_);
               // Reset state for next packet
               read_state_ = 0;
               bytes_read_ = 0;

@@ -9,7 +9,7 @@ from esphome.const import (
 CODEOWNERS = ["@tobias-93"]
 
 DEPENDENCIES = ["uart"]
-AUTO_LOAD = ["sensor", "text_sensor", "switch"]
+AUTO_LOAD = ["sensor", "text_sensor", "switch", "climate"]
 
 ecodan_ns = cg.esphome_ns.namespace("ecodan_")
 ECODAN = ecodan_ns.class_("EcodanHeatpump", cg.PollingComponent, uart.UARTDevice)

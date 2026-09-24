@@ -1,6 +1,7 @@
-import esphome.codegen as cg
+﻿import esphome.codegen as cg
 import esphome.config_validation as cv
 from esphome.components import climate
+from esphome.const import CONF_ID
 from . import ECODAN, CONF_ECODAN_ID, ecodan_ns
 
 AUTO_LOAD = ["ecodan"]
@@ -35,25 +36,28 @@ async def to_code(config):
     for zone_key, conf in config.items():
         if not isinstance(conf, dict):
             continue
-        id = conf.get("id")
-        if id and id.type == climate.Climate:
-            var = await climate.new_climate(conf)
-            
-            if zone_key == CONF_ZONE1:
-                cg.add(var.set_zone(1))
-                zone_name = "zone1"
-            elif zone_key == CONF_ZONE2:
-                cg.add(var.set_zone(2))
-                zone_name = "zone2"
-            else:
-                continue
-            
-            cg.add(getattr(heatpump, f"set_climate_{zone_name}")(var))
-            cg.add(var.set_zone_activity_action(conf[CONF_ZONE_ACTIVITY_ACTION]))
-            
-            climates.append(f"F({zone_name})")
 
+        if zone_key not in (CONF_ZONE1, CONF_ZONE2):
+            continue
+
+        if CONF_ID not in conf:
+            continue
+
+        var = await climate.new_climate(conf)
+        await cg.register_component(var, conf)
+
+        if zone_key == CONF_ZONE1:
+            cg.add(var.set_zone(1))
+            zone_name = "zone1"
+        else:
+            cg.add(var.set_zone(2))
+            zone_name = "zone2"
+
+        cg.add(getattr(heatpump, f"set_climate_{zone_name}")(var))
+        cg.add(var.set_zone_activity_action(conf[CONF_ZONE_ACTIVITY_ACTION]))
+        climates.append(f"F({zone_name})")
     if climates:
         cg.add_define(
             "ECODAN_CLIMATE_LIST(F, sep)", cg.RawExpression(" sep ".join(climates))
         )
+
