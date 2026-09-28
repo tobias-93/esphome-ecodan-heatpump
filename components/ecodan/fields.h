@@ -95,6 +95,26 @@ DEFINE_FIELD(holiday_mode, 0x28, 9, VarType_ON_OFF);
 // Boolean fields
 DEFINE_FIELD(power_state, 0x26, 8, VarType_ON_OFF);
 DEFINE_FIELD(force_dhw, 0x05, 12, VarType_ON_OFF);
+
+// Command 0x0d ("Thermistors 1") carries the Zone1/Zone2 flow and
+// return water thermistors, per the protocol documentation at
+// https://github.com/gekkekoe/esphome-ecodan-hp/blob/main/protocol.md
+// -- confirmed against command 0x0e ("Thermistors 2", boiler
+// THWB1/THWB2), which was empirically verified on a live FTC6 system
+// against the "Thermistor adjustment" panel screen (THWB1 tracked a
+// live boiler-flow rise from 25C to 44C exactly).
+DEFINE_FIELD(zone1_flow_water_temperature, 0x0d, 6, VarType_TEMPERATURE);
+DEFINE_FIELD(zone1_return_water_temperature, 0x0d, 9, VarType_TEMPERATURE);
+
+// Zone2 flow/return water thermistors (THW8/THW9), same command 0x0d,
+// following the documented offset pattern (relative offset + 5).
+// NOTE: sourced from the same protocol.md documentation as THW6/THW7,
+// but NOT live-validated -- the test system has no Zone 2 water
+// circuit installed (THW8/THW9 read blank on the FTC6 panel), so
+// there was no live value to compare against.
+DEFINE_FIELD(zone2_flow_water_temperature, 0x0d, 12, VarType_TEMPERATURE);
+DEFINE_FIELD(zone2_return_water_temperature, 0x0d, 15, VarType_TEMPERATURE);
+
 } // namespace fields
 } // namespace ecodan
 

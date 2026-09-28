@@ -1,6 +1,10 @@
 external_components:
-  - source: github://tobias-93/esphome-ecodan-heatpump@future-climate-2zone
+  - source:
+      type: git
+      url: https://github.com/allexkey/esphome-ecodan-heatpump
+      ref: probe-thw6-thw7
     components: [ ecodan ]
+    refresh: 0s
 
 logger:
   baud_rate: 0
@@ -122,6 +126,14 @@ sensor:
       id: energy_dhw_prod_yesterday
     energy_consumed_increasing:
       name: Total energy consumed
+    zone1_flow_water_temperature:
+      name: Zone 1 Flow water temperature
+    zone1_return_water_temperature:
+      name: Zone 1 Return water temperature
+    zone2_flow_water_temperature:
+      name: Zone 2 Flow water temperature
+    zone2_return_water_temperature:
+      name: Zone 2 Return water temperature
 
   # Calculated CoP (yesterday) as ratio of production/consumption
   - platform: template
