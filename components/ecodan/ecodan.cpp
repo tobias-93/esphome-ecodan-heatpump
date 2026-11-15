@@ -89,8 +89,10 @@ void EcodanNumber::control(float value) {
 EcodanHeatpump::EcodanHeatpump (uart::UARTComponent *parent) : uart::UARTDevice(parent) {}
 
 void EcodanHeatpump::setup() {
-  // This will be called by App.setup()
-  set_update_interval(POLL_INTERVAL);
+  // This will be called by App.setup(). The polling interval comes from the
+  // configuration (`update_interval`, 10 s by default): since ESPHome 2026.5
+  // the poller starts before setup(), so setting it here came too late and
+  // update() never ran.
 }
 
 void EcodanHeatpump::update() {
