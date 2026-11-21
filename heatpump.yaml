@@ -23,6 +23,7 @@ captive_portal:
 # Enable Web server.
 web_server:
   port: 80
+  ota: false
 
 # Sync time with Home Assistant.
 time:

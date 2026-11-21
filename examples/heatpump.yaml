@@ -19,7 +19,7 @@ wifi:
   password: !secret wifi_password
 
 ota:
-  password: !secret heatpump_ota_password
+  encryption:
   platform: esphome
 
 api:
