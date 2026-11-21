@@ -1,22 +1,22 @@
 #include "ecodan.h"
 
-constexpr uint8_t ecodan::commands::command_power_state::packetMask[PACKET_BUFFER_SIZE];
-constexpr uint8_t ecodan::commands::command_force_dhw::packetMask[PACKET_BUFFER_SIZE];
-constexpr uint8_t ecodan::commands::command_holiday_mode::packetMask[PACKET_BUFFER_SIZE];
-constexpr uint8_t ecodan::commands::command_mode_select_zone1::packetMask[PACKET_BUFFER_SIZE];
-constexpr uint8_t ecodan::commands::command_mode_select_zone2::packetMask[PACKET_BUFFER_SIZE];
-constexpr uint8_t ecodan::commands::command_hot_water_mode::packetMask[PACKET_BUFFER_SIZE];
-constexpr uint8_t ecodan::commands::command_hot_water_setpoint::packetMask[PACKET_BUFFER_SIZE];
-constexpr uint8_t ecodan::commands::command_heating_zone1_room_temp_setpoint::packetMask[PACKET_BUFFER_SIZE];
-constexpr uint8_t ecodan::commands::command_heating_zone1_flow_temp_setpoint::packetMask[PACKET_BUFFER_SIZE];
-constexpr uint8_t ecodan::commands::command_cooling_zone1_room_temp_setpoint::packetMask[PACKET_BUFFER_SIZE];
-constexpr uint8_t ecodan::commands::command_cooling_zone1_flow_temp_setpoint::packetMask[PACKET_BUFFER_SIZE];
-constexpr uint8_t ecodan::commands::command_heating_zone2_room_temp_setpoint::packetMask[PACKET_BUFFER_SIZE];
-constexpr uint8_t ecodan::commands::command_heating_zone2_flow_temp_setpoint::packetMask[PACKET_BUFFER_SIZE];
-constexpr uint8_t ecodan::commands::command_cooling_zone2_room_temp_setpoint::packetMask[PACKET_BUFFER_SIZE];
-constexpr uint8_t ecodan::commands::command_cooling_zone2_flow_temp_setpoint::packetMask[PACKET_BUFFER_SIZE];
-constexpr uint8_t ecodan::commands::command_zone1_room_temp::packetMask[PACKET_BUFFER_SIZE];
-constexpr uint8_t ecodan::commands::command_zone2_room_temp::packetMask[PACKET_BUFFER_SIZE];
+constexpr uint8_t ecodan::commands::command_power_state::packetMask[ECODAN_PACKET_BUFFER_SIZE];
+constexpr uint8_t ecodan::commands::command_force_dhw::packetMask[ECODAN_PACKET_BUFFER_SIZE];
+constexpr uint8_t ecodan::commands::command_holiday_mode::packetMask[ECODAN_PACKET_BUFFER_SIZE];
+constexpr uint8_t ecodan::commands::command_mode_select_zone1::packetMask[ECODAN_PACKET_BUFFER_SIZE];
+constexpr uint8_t ecodan::commands::command_mode_select_zone2::packetMask[ECODAN_PACKET_BUFFER_SIZE];
+constexpr uint8_t ecodan::commands::command_hot_water_mode::packetMask[ECODAN_PACKET_BUFFER_SIZE];
+constexpr uint8_t ecodan::commands::command_hot_water_setpoint::packetMask[ECODAN_PACKET_BUFFER_SIZE];
+constexpr uint8_t ecodan::commands::command_heating_zone1_room_temp_setpoint::packetMask[ECODAN_PACKET_BUFFER_SIZE];
+constexpr uint8_t ecodan::commands::command_heating_zone1_flow_temp_setpoint::packetMask[ECODAN_PACKET_BUFFER_SIZE];
+constexpr uint8_t ecodan::commands::command_cooling_zone1_room_temp_setpoint::packetMask[ECODAN_PACKET_BUFFER_SIZE];
+constexpr uint8_t ecodan::commands::command_cooling_zone1_flow_temp_setpoint::packetMask[ECODAN_PACKET_BUFFER_SIZE];
+constexpr uint8_t ecodan::commands::command_heating_zone2_room_temp_setpoint::packetMask[ECODAN_PACKET_BUFFER_SIZE];
+constexpr uint8_t ecodan::commands::command_heating_zone2_flow_temp_setpoint::packetMask[ECODAN_PACKET_BUFFER_SIZE];
+constexpr uint8_t ecodan::commands::command_cooling_zone2_room_temp_setpoint::packetMask[ECODAN_PACKET_BUFFER_SIZE];
+constexpr uint8_t ecodan::commands::command_cooling_zone2_flow_temp_setpoint::packetMask[ECODAN_PACKET_BUFFER_SIZE];
+constexpr uint8_t ecodan::commands::command_zone1_room_temp::packetMask[ECODAN_PACKET_BUFFER_SIZE];
+constexpr uint8_t ecodan::commands::command_zone2_room_temp::packetMask[ECODAN_PACKET_BUFFER_SIZE];
 
 namespace esphome {
 namespace ecodan_ {
@@ -29,12 +29,12 @@ void EcodanSwitch::dump_config() {
 }
 
 void EcodanSwitch::write_state(bool state) {
-  uint8_t sendBuffer[PACKET_BUFFER_SIZE];
+  uint8_t sendBuffer[ECODAN_PACKET_BUFFER_SIZE];
   bool send = false;
   #define ECODAN_WRITE_SWITCH(sw) \
     if (this->key_ == #sw) { \
       send = true; \
-      memcpy(sendBuffer, command_##sw::packetMask, PACKET_BUFFER_SIZE); \
+      memcpy(sendBuffer, command_##sw::packetMask, ECODAN_PACKET_BUFFER_SIZE); \
       sendBuffer[command_##sw::varIndex] = state ? 1 : 0; \
     }
     ECODAN_SWITCH_LIST(ECODAN_WRITE_SWITCH, )
@@ -51,12 +51,12 @@ void EcodanSelect::dump_config() {
 }
 
 void EcodanSelect::control(const std::string &value) {
-  uint8_t sendBuffer[PACKET_BUFFER_SIZE];
+  uint8_t sendBuffer[ECODAN_PACKET_BUFFER_SIZE];
   bool send = false;
   #define ECODAN_WRITE_SELECT(sl) \
     if (this->key_ == #sl) { \
       send = true; \
-      memcpy(sendBuffer, command_##sl::packetMask, PACKET_BUFFER_SIZE); \
+      memcpy(sendBuffer, command_##sl::packetMask, ECODAN_PACKET_BUFFER_SIZE); \
       uint8_t mode = parseModeStringToInt(command_##sl::varType, value); \
       sendBuffer[command_##sl::varIndex] = mode; \
     }
@@ -74,7 +74,7 @@ void EcodanNumber::dump_config() {
 }
 
 void EcodanNumber::control(float value) {
-  uint8_t sendBuffer[PACKET_BUFFER_SIZE], temp1, temp2;
+  uint8_t sendBuffer[ECODAN_PACKET_BUFFER_SIZE], temp1, temp2;
   uint16_t temperature = value * 100;
   temp1 = (uint8_t) (temperature >> 8);
   temp2 = (uint8_t) (temperature & 0x00ff);
@@ -85,9 +85,9 @@ void EcodanNumber::control(float value) {
     send = true;
     bool cooling = this->heatpump_->isCoolingZone2();
     if (cooling) {
-      memcpy(sendBuffer, command_cooling_zone2_room_temp_setpoint::packetMask, PACKET_BUFFER_SIZE);
+      memcpy(sendBuffer, command_cooling_zone2_room_temp_setpoint::packetMask, ECODAN_PACKET_BUFFER_SIZE);
     } else {
-      memcpy(sendBuffer, command_heating_zone2_room_temp_setpoint::packetMask, PACKET_BUFFER_SIZE);
+      memcpy(sendBuffer, command_heating_zone2_room_temp_setpoint::packetMask, ECODAN_PACKET_BUFFER_SIZE);
     }
     
     
@@ -115,7 +115,7 @@ void EcodanNumber::control(float value) {
     #define ECODAN_WRITE_NUMBER(nb) \
       if (this->key_ == #nb) { \
         send = true; \
-        memcpy(sendBuffer, command_##nb::packetMask, PACKET_BUFFER_SIZE); \
+        memcpy(sendBuffer, command_##nb::packetMask, ECODAN_PACKET_BUFFER_SIZE); \
         sendBuffer[command_##nb::varIndex] = temp1; \
         sendBuffer[command_##nb::varIndex + 1] = temp2; \
         ESP_LOGV(TAG, "Setting %s to %.1f°C", #nb, value); \
@@ -135,11 +135,11 @@ void EcodanNumber::control(float value) {
           return; \
         } \
         if (cooling) { \
-          memcpy(sendBuffer, command_cooling_##hcnb::packetMask, PACKET_BUFFER_SIZE); \
+          memcpy(sendBuffer, command_cooling_##hcnb::packetMask, ECODAN_PACKET_BUFFER_SIZE); \
           sendBuffer[command_cooling_##hcnb::varIndex] = temp1; \
           sendBuffer[command_cooling_##hcnb::varIndex + 1] = temp2; \
         } else { \
-          memcpy(sendBuffer, command_heating_##hcnb::packetMask, PACKET_BUFFER_SIZE); \
+          memcpy(sendBuffer, command_heating_##hcnb::packetMask, ECODAN_PACKET_BUFFER_SIZE); \
           sendBuffer[command_heating_##hcnb::varIndex] = temp1; \
           sendBuffer[command_heating_##hcnb::varIndex + 1] = temp2; \
         } \
@@ -199,7 +199,7 @@ void EcodanClimate::control(const climate::ClimateCall &call) {
     target_temp = round(target_temp / step) * step;
     
     if (std::abs(this->target_temperature - target_temp) > 0.01f) {
-      uint8_t sendBuffer[PACKET_BUFFER_SIZE];
+      uint8_t sendBuffer[ECODAN_PACKET_BUFFER_SIZE];
       uint16_t temperature = target_temp * 100;
       uint8_t temp1 = (uint8_t) (temperature >> 8);
       uint8_t temp2 = (uint8_t) (temperature & 0x00ff);
@@ -207,20 +207,20 @@ void EcodanClimate::control(const climate::ClimateCall &call) {
       if (this->zone_ == 1) {
         bool cooling = this->heatpump_->isCoolingZone1();
         if (cooling) {
-          memcpy(sendBuffer, command_cooling_zone1_room_temp_setpoint::packetMask, PACKET_BUFFER_SIZE);
+          memcpy(sendBuffer, command_cooling_zone1_room_temp_setpoint::packetMask, ECODAN_PACKET_BUFFER_SIZE);
           sendBuffer[command_cooling_zone1_room_temp_setpoint::varIndex] = temp1;
           sendBuffer[command_cooling_zone1_room_temp_setpoint::varIndex + 1] = temp2;
         } else {
-          memcpy(sendBuffer, command_heating_zone1_room_temp_setpoint::packetMask, PACKET_BUFFER_SIZE);
+          memcpy(sendBuffer, command_heating_zone1_room_temp_setpoint::packetMask, ECODAN_PACKET_BUFFER_SIZE);
           sendBuffer[command_heating_zone1_room_temp_setpoint::varIndex] = temp1;
           sendBuffer[command_heating_zone1_room_temp_setpoint::varIndex + 1] = temp2;
         }
       } else if (this->zone_ == 2) {
         bool cooling = this->heatpump_->isCoolingZone2();
         if (cooling) {
-          memcpy(sendBuffer, command_cooling_zone2_room_temp_setpoint::packetMask, PACKET_BUFFER_SIZE);
+          memcpy(sendBuffer, command_cooling_zone2_room_temp_setpoint::packetMask, ECODAN_PACKET_BUFFER_SIZE);
         } else {
-          memcpy(sendBuffer, command_heating_zone2_room_temp_setpoint::packetMask, PACKET_BUFFER_SIZE);
+          memcpy(sendBuffer, command_heating_zone2_room_temp_setpoint::packetMask, ECODAN_PACKET_BUFFER_SIZE);
         }
         
         float zone1_temp = this->heatpump_->get_zone1_room_temp_setpoint();
@@ -252,7 +252,7 @@ void EcodanClimate::control(const climate::ClimateCall &call) {
   if (call.get_mode().has_value()) {
     auto mode = call.get_mode();
     if (this->mode != mode) {
-      uint8_t sendBuffer[PACKET_BUFFER_SIZE];
+      uint8_t sendBuffer[ECODAN_PACKET_BUFFER_SIZE];
       std::string modeString;
       bool cooling;
       if (mode == climate::CLIMATE_MODE_COOL) {
@@ -266,12 +266,12 @@ void EcodanClimate::control(const climate::ClimateCall &call) {
         return;
       }
       if (this->zone_ == 1) {
-        memcpy(sendBuffer, command_mode_select_zone1::packetMask, PACKET_BUFFER_SIZE);
+        memcpy(sendBuffer, command_mode_select_zone1::packetMask, ECODAN_PACKET_BUFFER_SIZE);
         uint8_t modeInt = parseModeStringToInt(command_mode_select_zone1::varType, modeString);
         sendBuffer[command_mode_select_zone1::varIndex] = modeInt;
         this->heatpump_->setCoolingZone1(cooling);
       } else if (this->zone_ == 2) {
-        memcpy(sendBuffer, command_mode_select_zone2::packetMask, PACKET_BUFFER_SIZE);
+        memcpy(sendBuffer, command_mode_select_zone2::packetMask, ECODAN_PACKET_BUFFER_SIZE);
         uint8_t modeInt = parseModeStringToInt(command_mode_select_zone2::varType, modeString);
         sendBuffer[command_mode_select_zone2::varIndex] = modeInt;
         this->heatpump_->setCoolingZone2(cooling);
@@ -330,7 +330,7 @@ void EcodanHeatpump::loop() {
 
 void EcodanHeatpump::initialize() {
   int i;
-  for (i = 0; i < CONNECT_LEN; i++) {
+  for (i = 0; i < ECODAN_CONNECT_LEN; i++) {
     write(CONNECT[i]);
   }
   flush();
@@ -338,7 +338,7 @@ void EcodanHeatpump::initialize() {
 }
 
 void EcodanHeatpump::receiveSerialPacket() {
-  if (readPacket(receive_buffer_) == RCVD_PKT_CONNECT_SUCCESS) {
+  if (readPacket(receive_buffer_) == ECODAN_RCVD_PKT_CONNECT_SUCCESS) {
     parsePacket(receive_buffer_);
   }
 }
@@ -389,7 +389,7 @@ int EcodanHeatpump::readPacket(uint8_t *data) {
                 isInitialized = true;
                 ESP_LOGI(TAG, "Connected successfully");
               }
-              return RCVD_PKT_CONNECT_SUCCESS;
+              return ECODAN_RCVD_PKT_CONNECT_SUCCESS;
             } else {
               ESP_LOGE(TAG, "CRC ERROR: expected 0x%02x, got 0x%02x (at data[%d])", checksum, data[expected_length_], expected_length_);
               // Reset state on error
@@ -403,7 +403,7 @@ int EcodanHeatpump::readPacket(uint8_t *data) {
     }
   }
   
-  return RCVD_PKT_FAIL; // No complete packet yet
+  return ECODAN_RCVD_PKT_FAIL; // No complete packet yet
 }
 
 void EcodanHeatpump::sendSerialPacket(uint8_t *sendBuffer) {
@@ -602,13 +602,13 @@ void EcodanHeatpump::setRemoteTemperature(float value, uint8_t zone) {
     return;
   }
   
-  uint8_t sendBuffer[PACKET_BUFFER_SIZE];
+  uint8_t sendBuffer[ECODAN_PACKET_BUFFER_SIZE];
   
   // Select the appropriate command based on zone
   if (zone == 1) {
-    memcpy(sendBuffer, command_zone1_room_temp::packetMask, PACKET_BUFFER_SIZE);
+    memcpy(sendBuffer, command_zone1_room_temp::packetMask, ECODAN_PACKET_BUFFER_SIZE);
   } else {
-    memcpy(sendBuffer, command_zone2_room_temp::packetMask, PACKET_BUFFER_SIZE);
+    memcpy(sendBuffer, command_zone2_room_temp::packetMask, ECODAN_PACKET_BUFFER_SIZE);
   }
   
   if (value > 0) {
@@ -809,7 +809,7 @@ void EcodanHeatpump::processStateMachine() {
   delayMicroseconds(1);
   
   static uint32_t last_debug_log = 0;
-  if (now - last_debug_log > STATE_LOG_INTERVAL_MS) {
+  if (now - last_debug_log > ECODAN_STATE_LOG_INTERVAL_MS) {
     ESP_LOGV(TAG, "State: %d, entities: %d, op_pending: %s", 
              (int)state_, entity_list_.size(),
              pending_operation_.is_pending ? "true" : "false");
@@ -872,17 +872,17 @@ void EcodanHeatpump::handleInitializing() {
   uint32_t now = millis();
   
   if (!isInitialized) {
-    if (now - last_command_time_ > INIT_RETRY_INTERVAL_MS) { // Try every 2 seconds
-      if (init_retry_count_ < MAX_INIT_RETRIES) {
-        ESP_LOGD(TAG, "Initialization attempt %d/%d", init_retry_count_ + 1, MAX_INIT_RETRIES);
+    if (now - last_command_time_ > ECODAN_INIT_RETRY_INTERVAL_MS) { // Try every 2 seconds
+      if (init_retry_count_ < ECODAN_MAX_INIT_RETRIES) {
+        ESP_LOGD(TAG, "Initialization attempt %d/%d", init_retry_count_ + 1, ECODAN_MAX_INIT_RETRIES);
         initialize();
         init_retry_count_++;
         last_command_time_ = now;
       } else {
-        ESP_LOGE(TAG, "Failed to initialize after %d attempts, resetting retry counter", MAX_INIT_RETRIES);
+        ESP_LOGE(TAG, "Failed to initialize after %d attempts, resetting retry counter", ECODAN_MAX_INIT_RETRIES);
         // Reset and try again after a longer delay
         init_retry_count_ = 0;
-        last_command_time_ = now - INIT_RETRY_DELAY_MS;
+        last_command_time_ = now - ECODAN_INIT_RETRY_DELAY_MS;
       }
     }
   } else {
@@ -911,7 +911,7 @@ void EcodanHeatpump::handleReading() {
     }
     
     // Queue new sensor read request
-    uint8_t sendBuffer[PACKET_BUFFER_SIZE];
+    uint8_t sendBuffer[ECODAN_PACKET_BUFFER_SIZE];
     buildSensorReadPacket(sendBuffer, entity_list_[current_entity_index_].address);
     pending_address_ = entity_list_[current_entity_index_].address;
     
@@ -930,7 +930,7 @@ void EcodanHeatpump::handleReading() {
     ESP_LOGV(TAG, "Operation in progress, waiting...");
   } else {
     ESP_LOGV(TAG, "Waiting for next read time (last_read: %d, now: %d, delay: %d)", 
-             last_read_time_, now, READOUT_DELAY);
+             last_read_time_, now, ECODAN_READOUT_DELAY);
   }
 }
 
@@ -949,7 +949,7 @@ void EcodanHeatpump::handleWaitingForOperationResponse() {
   uint32_t now = millis();
   
   // Timeout after configured duration for all responses
-  if (now - last_command_time_ > OPERATION_TIMEOUT_MS) {
+  if (now - last_command_time_ > ECODAN_OPERATION_TIMEOUT_MS) {
     ESP_LOGV(TAG, "Operation timeout, resuming");
     operation_in_progress_ = false;
     
@@ -976,7 +976,7 @@ void EcodanHeatpump::handleWaitingForOperationResponse() {
 
 bool EcodanHeatpump::isTimeToReadNext() {
   uint32_t now = millis();
-  bool ready = (now - last_read_time_) > READOUT_DELAY;
+  bool ready = (now - last_read_time_) > ECODAN_READOUT_DELAY;
 
   return ready;
 }
@@ -990,7 +990,7 @@ void EcodanHeatpump::queueCommand(uint8_t *commandBuffer) {
     ESP_LOGV(TAG, "Replacing pending operation with new user command");
   }
   
-  memcpy(pending_operation_.buffer, commandBuffer, PACKET_BUFFER_SIZE);
+  memcpy(pending_operation_.buffer, commandBuffer, ECODAN_PACKET_BUFFER_SIZE);
   pending_operation_.is_pending = true;
   pending_operation_.is_user_command = true;
   pending_operation_.queued_time = millis();
@@ -1004,7 +1004,7 @@ void EcodanHeatpump::queueSensorRead(uint8_t *readBuffer, uint8_t address) {
     return; // Give priority to user commands
   }
   
-  memcpy(pending_operation_.buffer, readBuffer, PACKET_BUFFER_SIZE);
+  memcpy(pending_operation_.buffer, readBuffer, ECODAN_PACKET_BUFFER_SIZE);
   pending_operation_.is_pending = true;
   pending_operation_.is_user_command = false;
   pending_operation_.expected_response_address = address;
@@ -1084,12 +1084,12 @@ void EcodanHeatpump::addEntityIfNotPresent(uint8_t address, const char* type, co
 
 void EcodanHeatpump::buildSensorReadPacket(uint8_t *buffer, uint8_t address) {
   // Standard sensor read packet template
-  static const uint8_t READ_PACKET_TEMPLATE[PACKET_BUFFER_SIZE] = {
+  static const uint8_t READ_PACKET_TEMPLATE[ECODAN_PACKET_BUFFER_SIZE] = {
     0xfc, 0x42, 0x02, 0x7a, 0x10, 0x00, 0x00, 0x00, 0x00, 0x00, 
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
   };
   
-  memcpy(buffer, READ_PACKET_TEMPLATE, PACKET_BUFFER_SIZE);
+  memcpy(buffer, READ_PACKET_TEMPLATE, ECODAN_PACKET_BUFFER_SIZE);
   buffer[5] = address; // Set the target address
 }
 
