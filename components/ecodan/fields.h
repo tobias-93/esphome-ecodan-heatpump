@@ -32,7 +32,8 @@ enum varTypeEnum {
 
 namespace fields {
 
-#define DEFINE_FIELD(d_fieldname, d_address, d_varIndex, d_varType) \
+#ifndef ECODAN_DEFINE_FIELD
+#define ECODAN_DEFINE_FIELD(d_fieldname, d_address, d_varIndex, d_varType) \
   struct field_##d_fieldname { \
     static constexpr uint8_t address = d_address; \
     static constexpr uint8_t varIndex = d_varIndex; \
@@ -40,61 +41,61 @@ namespace fields {
   }
 
 // Numeric fields
-DEFINE_FIELD(error_code, 0x03, 7, VarType_2BYTEHEXVALUE);
-DEFINE_FIELD(frequency, 0x04, 6, VarType_DECVALUE);
-DEFINE_FIELD(output_power, 0x07, 11, VarType_DECVALUE);
-DEFINE_FIELD(zone1_room_temp_setpoint, 0x09, 6, VarType_TEMPERATURE);
-DEFINE_FIELD(zone2_room_temp_setpoint, 0x09, 8, VarType_TEMPERATURE);
-DEFINE_FIELD(zone1_flow_temp_setpoint, 0x09, 10, VarType_TEMPERATURE);
-DEFINE_FIELD(zone2_flow_temp_setpoint, 0x09, 12, VarType_TEMPERATURE);
-DEFINE_FIELD(legionella_temp_setpoint, 0x09, 14, VarType_TEMPERATURE);
-DEFINE_FIELD(hot_water_max_temp_drop, 0x09, 16, VarType_DECVALUE);
-DEFINE_FIELD(hot_water_temp_range_max, 0x09, 17, VarType_ONE_BYTE_TEMPERATURE_20);
-DEFINE_FIELD(hot_water_temp_range_min, 0x09, 18, VarType_ONE_BYTE_TEMPERATURE_20);
-DEFINE_FIELD(zone1_room_temperature, 0x0b, 6, VarType_TEMPERATURE);
-DEFINE_FIELD(zone2_room_temperature, 0x0b, 8, VarType_TEMPERATURE);
-DEFINE_FIELD(gas_return_temperature, 0x0b, 13, VarType_TEMPERATURE);
-DEFINE_FIELD(gas_return_temp_signed, 0x0b, 15, VarType_ONE_BYTE_TEMPERATURE);
-DEFINE_FIELD(outside_temperature, 0x0b, 16, VarType_ONE_BYTE_TEMPERATURE);
-DEFINE_FIELD(water_feed_temperature, 0x0c, 6, VarType_TEMPERATURE);
-DEFINE_FIELD(water_feed_temp_signed, 0x0c, 8, VarType_ONE_BYTE_TEMPERATURE);
-DEFINE_FIELD(water_return_temperature, 0x0c, 9, VarType_TEMPERATURE);
-DEFINE_FIELD(water_return_temp_signed, 0x0c, 11, VarType_ONE_BYTE_TEMPERATURE);
-DEFINE_FIELD(hot_water_temperature, 0x0c, 12, VarType_TEMPERATURE);
-DEFINE_FIELD(runtime, 0x13, 8, VarType_RUNTIME);
+ECODAN_DEFINE_FIELD(error_code, 0x03, 7, VarType_2BYTEHEXVALUE);
+ECODAN_DEFINE_FIELD(frequency, 0x04, 6, VarType_DECVALUE);
+ECODAN_DEFINE_FIELD(output_power, 0x07, 11, VarType_DECVALUE);
+ECODAN_DEFINE_FIELD(zone1_room_temp_setpoint, 0x09, 6, VarType_TEMPERATURE);
+ECODAN_DEFINE_FIELD(zone2_room_temp_setpoint, 0x09, 8, VarType_TEMPERATURE);
+ECODAN_DEFINE_FIELD(zone1_flow_temp_setpoint, 0x09, 10, VarType_TEMPERATURE);
+ECODAN_DEFINE_FIELD(zone2_flow_temp_setpoint, 0x09, 12, VarType_TEMPERATURE);
+ECODAN_DEFINE_FIELD(legionella_temp_setpoint, 0x09, 14, VarType_TEMPERATURE);
+ECODAN_DEFINE_FIELD(hot_water_max_temp_drop, 0x09, 16, VarType_DECVALUE);
+ECODAN_DEFINE_FIELD(hot_water_temp_range_max, 0x09, 17, VarType_ONE_BYTE_TEMPERATURE_20);
+ECODAN_DEFINE_FIELD(hot_water_temp_range_min, 0x09, 18, VarType_ONE_BYTE_TEMPERATURE_20);
+ECODAN_DEFINE_FIELD(zone1_room_temperature, 0x0b, 6, VarType_TEMPERATURE);
+ECODAN_DEFINE_FIELD(zone2_room_temperature, 0x0b, 8, VarType_TEMPERATURE);
+ECODAN_DEFINE_FIELD(gas_return_temperature, 0x0b, 13, VarType_TEMPERATURE);
+ECODAN_DEFINE_FIELD(gas_return_temp_signed, 0x0b, 15, VarType_ONE_BYTE_TEMPERATURE);
+ECODAN_DEFINE_FIELD(outside_temperature, 0x0b, 16, VarType_ONE_BYTE_TEMPERATURE);
+ECODAN_DEFINE_FIELD(water_feed_temperature, 0x0c, 6, VarType_TEMPERATURE);
+ECODAN_DEFINE_FIELD(water_feed_temp_signed, 0x0c, 8, VarType_ONE_BYTE_TEMPERATURE);
+ECODAN_DEFINE_FIELD(water_return_temperature, 0x0c, 9, VarType_TEMPERATURE);
+ECODAN_DEFINE_FIELD(water_return_temp_signed, 0x0c, 11, VarType_ONE_BYTE_TEMPERATURE);
+ECODAN_DEFINE_FIELD(hot_water_temperature, 0x0c, 12, VarType_TEMPERATURE);
+ECODAN_DEFINE_FIELD(runtime, 0x13, 8, VarType_RUNTIME);
 // zone_activity_status is using 0x03 index 13, which is undocumented.
 // It seems to behave as the documented index 8 (3 = Z2 heating, 2 = Z1 heating, 1 = Both Zones heating, 0 = Idle)
-DEFINE_FIELD(zone_activity_status, 0x03, 13, VarType_DECVALUE);
-DEFINE_FIELD(water_flow, 0x14, 17, VarType_DECVALUE);
-DEFINE_FIELD(hot_water_setpoint, 0x26, 13, VarType_TEMPERATURE);
-DEFINE_FIELD(zone1_flow_temp_setpoint2, 0x26, 15, VarType_TEMPERATURE);
-DEFINE_FIELD(zone2_flow_temp_setpoint2, 0x26, 17, VarType_TEMPERATURE);
-DEFINE_FIELD(zone1_room_temp_setpoint2, 0x29, 9, VarType_TEMPERATURE);
-DEFINE_FIELD(zone2_room_temp_setpoint2, 0x29, 11, VarType_TEMPERATURE);
-DEFINE_FIELD(energy_cons_yesterday, 0xA1, 9, VarType_3BYTEVALUE);
-DEFINE_FIELD(energy_prod_yesterday, 0xA2, 9, VarType_3BYTEVALUE);
-DEFINE_FIELD(energy_cooling_cons_yesterday, 0xA1, 12, VarType_3BYTEVALUE);
-DEFINE_FIELD(energy_cooling_prod_yesterday, 0xA2, 12, VarType_3BYTEVALUE);
-DEFINE_FIELD(energy_dhw_cons_yesterday, 0xA1, 15, VarType_3BYTEVALUE);
-DEFINE_FIELD(energy_dhw_prod_yesterday, 0xA2, 15, VarType_3BYTEVALUE);
-DEFINE_FIELD(energy_consumed_increasing, 0x07, 16, VarType_TOTAL_ENERGY);
+ECODAN_DEFINE_FIELD(zone_activity_status, 0x03, 13, VarType_DECVALUE);
+ECODAN_DEFINE_FIELD(water_flow, 0x14, 17, VarType_DECVALUE);
+ECODAN_DEFINE_FIELD(hot_water_setpoint, 0x26, 13, VarType_TEMPERATURE);
+ECODAN_DEFINE_FIELD(zone1_flow_temp_setpoint2, 0x26, 15, VarType_TEMPERATURE);
+ECODAN_DEFINE_FIELD(zone2_flow_temp_setpoint2, 0x26, 17, VarType_TEMPERATURE);
+ECODAN_DEFINE_FIELD(zone1_room_temp_setpoint2, 0x29, 9, VarType_TEMPERATURE);
+ECODAN_DEFINE_FIELD(zone2_room_temp_setpoint2, 0x29, 11, VarType_TEMPERATURE);
+ECODAN_DEFINE_FIELD(energy_cons_yesterday, 0xA1, 9, VarType_3BYTEVALUE);
+ECODAN_DEFINE_FIELD(energy_prod_yesterday, 0xA2, 9, VarType_3BYTEVALUE);
+ECODAN_DEFINE_FIELD(energy_cooling_cons_yesterday, 0xA1, 12, VarType_3BYTEVALUE);
+ECODAN_DEFINE_FIELD(energy_cooling_prod_yesterday, 0xA2, 12, VarType_3BYTEVALUE);
+ECODAN_DEFINE_FIELD(energy_dhw_cons_yesterday, 0xA1, 15, VarType_3BYTEVALUE);
+ECODAN_DEFINE_FIELD(energy_dhw_prod_yesterday, 0xA2, 15, VarType_3BYTEVALUE);
+ECODAN_DEFINE_FIELD(energy_consumed_increasing, 0x07, 16, VarType_TOTAL_ENERGY);
 
 // Text fields
-DEFINE_FIELD(date_time, 0x01, 6, VarType_TIME_DATE);
-DEFINE_FIELD(defrost, 0x02, 8, VarType_DEFROST);
-DEFINE_FIELD(heating_stage, 0x07, 9, VarType_HEAT_STAGE);
-DEFINE_FIELD(operating_mode, 0x26, 9, VarType_OPERATING_MODE);
-DEFINE_FIELD(hot_water_mode, 0x26, 10, VarType_HW_MODE);
-DEFINE_FIELD(mode_select_zone1, 0x26, 11, VarType_MODE_SETTING);
-DEFINE_FIELD(mode_select_zone2, 0x26, 12, VarType_MODE_SETTING);
-DEFINE_FIELD(hot_water_timer, 0x28, 9, VarType_ON_OFF);
-DEFINE_FIELD(date_energy_cons, 0xA1, 6, VarType_DATE);
-DEFINE_FIELD(date_energy_prod, 0xA2, 6, VarType_DATE);
-DEFINE_FIELD(holiday_mode, 0x28, 9, VarType_ON_OFF);
+ECODAN_DEFINE_FIELD(date_time, 0x01, 6, VarType_TIME_DATE);
+ECODAN_DEFINE_FIELD(defrost, 0x02, 8, VarType_DEFROST);
+ECODAN_DEFINE_FIELD(heating_stage, 0x07, 9, VarType_HEAT_STAGE);
+ECODAN_DEFINE_FIELD(operating_mode, 0x26, 9, VarType_OPERATING_MODE);
+ECODAN_DEFINE_FIELD(hot_water_mode, 0x26, 10, VarType_HW_MODE);
+ECODAN_DEFINE_FIELD(mode_select_zone1, 0x26, 11, VarType_MODE_SETTING);
+ECODAN_DEFINE_FIELD(mode_select_zone2, 0x26, 12, VarType_MODE_SETTING);
+ECODAN_DEFINE_FIELD(hot_water_timer, 0x28, 9, VarType_ON_OFF);
+ECODAN_DEFINE_FIELD(date_energy_cons, 0xA1, 6, VarType_DATE);
+ECODAN_DEFINE_FIELD(date_energy_prod, 0xA2, 6, VarType_DATE);
+ECODAN_DEFINE_FIELD(holiday_mode, 0x28, 9, VarType_ON_OFF);
 
 // Boolean fields
-DEFINE_FIELD(power_state, 0x26, 8, VarType_ON_OFF);
-DEFINE_FIELD(force_dhw, 0x05, 12, VarType_ON_OFF);
+ECODAN_DEFINE_FIELD(power_state, 0x26, 8, VarType_ON_OFF);
+ECODAN_DEFINE_FIELD(force_dhw, 0x05, 12, VarType_ON_OFF);
 } // namespace fields
 } // namespace ecodan
 
