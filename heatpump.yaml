@@ -83,6 +83,8 @@ sensor:
       name: Frequency
     output_power:
       name: Output power
+    input_power:
+      name: Input power
     zone1_room_temperature:
       name: Zone 1 Room temperature
     zone2_room_temperature:
