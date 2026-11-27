@@ -19,6 +19,7 @@
 #define RCVD_PKT_CONNECT_SUCCESS 1
 #define POLL_INTERVAL 10000 // 10 seconds
 #define READOUT_DELAY 100 // 100 ms
+#define RECONNECT_AFTER 60000 // 60 s without a valid packet: connect again
 
 namespace esphome {
 namespace ecodan_ {
@@ -137,6 +138,7 @@ class EcodanHeatpump : public PollingComponent, public uart::UARTDevice {
 
   private:
     bool isInitialized = false;
+    uint32_t lastPacketTime = 0; // millis() of the last valid packet
     int currentState = 0;
     void initialize();
 
