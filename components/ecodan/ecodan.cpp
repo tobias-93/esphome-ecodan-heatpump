@@ -97,6 +97,12 @@ void EcodanHeatpump::setup() {
 
 void EcodanHeatpump::update() {
   // This will be called by App.loop()
+  if (isInitialized && millis() - lastPacketTime > RECONNECT_AFTER) {
+    // The heat pump stopped answering (restarted, power cut, maintenance):
+    // it waits for a new connect command before answering again.
+    ESP_LOGW(TAG, "No answer from the heat pump for %d s, connecting again", RECONNECT_AFTER / 1000);
+    isInitialized = false;
+  }
   if (!isInitialized) {
     initialize();
     receiveSerialPacket();
@@ -180,6 +186,7 @@ int EcodanHeatpump::readPacket(uint8_t *data) {
       uint8_t checksum = calculateCheckSum(data);
       data[dataLength] = read();   // read checksum byte
       if (data[dataLength] == checksum) { // correct packet found
+        lastPacketTime = millis();
         if (data[1] == 0x7a) {
           isInitialized = true;
           ESP_LOGI(TAG, "Connected successfully");
