@@ -41,6 +41,14 @@ CONFIG_SCHEMA = cv.Schema(
             device_class=DEVICE_CLASS_POWER,
             state_class=STATE_CLASS_MEASUREMENT,
         ),
+        # Electrical input power, whole kW only (issue #17).
+        cv.Optional("input_power"): sensor.sensor_schema(
+            unit_of_measurement=UNIT_KILOWATT,
+            icon="mdi:flash",
+            accuracy_decimals=0,
+            device_class=DEVICE_CLASS_POWER,
+            state_class=STATE_CLASS_MEASUREMENT,
+        ),
         cv.Optional("zone1_room_temperature"): sensor.sensor_schema(
             unit_of_measurement=UNIT_CELSIUS,
             icon="mdi:home-thermometer",

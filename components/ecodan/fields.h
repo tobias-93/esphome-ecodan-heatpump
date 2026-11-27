@@ -45,6 +45,8 @@ namespace fields {
 ECODAN_DEFINE_FIELD(error_code, 0x03, 7, VarType_2BYTEHEXVALUE);
 ECODAN_DEFINE_FIELD(frequency, 0x04, 6, VarType_DECVALUE);
 ECODAN_DEFINE_FIELD(output_power, 0x07, 11, VarType_DECVALUE);
+// Electrical input power in whole kW (the same byte as heating_stage, see issue #17).
+ECODAN_DEFINE_FIELD(input_power, 0x07, 9, VarType_DECVALUE);
 ECODAN_DEFINE_FIELD(zone1_room_temp_setpoint, 0x09, 6, VarType_TEMPERATURE);
 ECODAN_DEFINE_FIELD(zone2_room_temp_setpoint, 0x09, 8, VarType_TEMPERATURE);
 ECODAN_DEFINE_FIELD(zone1_flow_temp_setpoint, 0x09, 10, VarType_TEMPERATURE);
