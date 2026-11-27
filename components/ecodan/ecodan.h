@@ -44,6 +44,9 @@
 #ifndef ECODAN_INIT_RETRY_INTERVAL_MS
 #define ECODAN_INIT_RETRY_INTERVAL_MS 2000 // Interval between initialization attempts
 #endif
+#ifndef ECODAN_RECONNECT_AFTER_MS
+#define ECODAN_RECONNECT_AFTER_MS 120000 // No valid packet for this long (and 3 update intervals): connect again
+#endif
 
 namespace esphome {
 namespace ecodan_ {
@@ -243,6 +246,7 @@ class EcodanHeatpump : public PollingComponent, public uart::UARTDevice {
     uint8_t pending_address_ = 0;
     bool waiting_for_response_ = false;
     uint8_t init_retry_count_ = 0;
+    uint32_t last_packet_time_ = 0; // millis() of the last valid packet
     
     // Packet reading state variables (converted from static to instance variables)
     uint8_t read_state_ = 0; // 0: looking for start, 1: reading header, 2: reading payload

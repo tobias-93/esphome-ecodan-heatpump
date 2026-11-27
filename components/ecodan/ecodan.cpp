@@ -1,4 +1,5 @@
 #include "ecodan.h"
+#include <algorithm>
 
 constexpr uint8_t ecodan::commands::command_power_state::packetMask[ECODAN_PACKET_BUFFER_SIZE];
 constexpr uint8_t ecodan::commands::command_force_dhw::packetMask[ECODAN_PACKET_BUFFER_SIZE];
@@ -314,6 +315,26 @@ void EcodanHeatpump::setup() {
 
 void EcodanHeatpump::update() {
   // Called at configured update_interval (default: 30s)
+  // The heat pump answers nothing until it gets a new connect command once
+  // it restarted (power cut, maintenance): connect again after a silence.
+  uint32_t silence = millis() - last_packet_time_;
+  uint32_t limit = std::max<uint32_t>(ECODAN_RECONNECT_AFTER_MS, 3 * this->get_update_interval());
+  if (isInitialized && silence > limit) {
+    ESP_LOGW(TAG, "No answer from the heat pump for %u s, connecting again", (unsigned) (silence / 1000));
+    isInitialized = false;
+    init_retry_count_ = 0;
+    read_state_ = 0;
+    bytes_read_ = 0;
+    expected_length_ = 0;
+    waiting_for_response_ = false;
+    operation_in_progress_ = false;
+    // A sensor read is dropped; a user command waits for the new connection.
+    if (pending_operation_.is_pending && !pending_operation_.is_user_command) {
+      pending_operation_.is_pending = false;
+    }
+    state_ = ComponentState::INITIALIZING;
+    return;
+  }
   // Start a new reading cycle if we're idle
   if (state_ == ComponentState::IDLE && isInitialized) {
     current_entity_index_ = 0;
@@ -378,6 +399,7 @@ int EcodanHeatpump::readPacket(uint8_t *data) {
             uint8_t checksum = calculateCheckSum(data);
             
             if (data[expected_length_] == checksum) {
+              last_packet_time_ = millis();
               // Reset state for next packet
               read_state_ = 0;
               bytes_read_ = 0;
